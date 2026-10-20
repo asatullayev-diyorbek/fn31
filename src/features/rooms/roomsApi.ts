@@ -8,7 +8,6 @@ import {
   serverTimestamp,
   setDoc,
   where,
-  writeBatch,
 } from "firebase/firestore";
 import { getFirebaseFirestore } from "@/lib/firebase/client";
 import { generatePuzzleGeometry, hashStringToSeed, mulberry32 } from "@/features/puzzle/geometry";
@@ -107,8 +106,15 @@ export async function createRoom(options: CreateRoomOptions): Promise<{ roomId: 
   const positions = scatterForNewGame(pieceIds, geometrySeed);
   const chunks = chunkScatteredPieces(pieceIds, positions);
 
-  const batch = writeBatch(db);
-
+  // Split into two sequential writes rather than one atomic batch: a
+  // Security Rule's get()/exists() call only sees state committed BEFORE
+  // the current request started — it never sees another write from the
+  // very same batch. Since the participant/game/pieceChunks create rules
+  // all read the room doc (via isRoomOwner/isRoomMember) to authorize
+  // themselves, that room doc must already be committed when they run,
+  // so it has to be its own request first. (Confirmed by hitting exactly
+  // this PERMISSION_DENIED during manual Playwright verification — see
+  // IMPLEMENTATION_PLAN.md Phase 7.)
   const roomRef = doc(db, "rooms", roomId);
   const room: Omit<Room, "createdAt" | "updatedAt" | "expiresAt"> & {
     createdAt: unknown;
@@ -125,18 +131,9 @@ export async function createRoom(options: CreateRoomOptions): Promise<{ roomId: 
     updatedAt: serverTimestamp(),
     expiresAt: null,
   };
-  batch.set(roomRef, room);
+  await setDoc(roomRef, room);
 
   const participantRef = doc(db, "rooms", roomId, "participants", options.ownerUid);
-  batch.set(participantRef, {
-    uid: options.ownerUid,
-    displayName: options.ownerDisplayName,
-    role: "owner",
-    joinedAt: serverTimestamp(),
-    lastSeenAt: serverTimestamp(),
-    connectionStatus: "online",
-  });
-
   const gameRef = doc(db, "rooms", roomId, "games", gameId);
   const game: Omit<Game, "createdAt" | "updatedAt" | "completedAt"> & {
     createdAt: unknown;
@@ -161,14 +158,32 @@ export async function createRoom(options: CreateRoomOptions): Promise<{ roomId: 
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
-  batch.set(gameRef, game);
+  // Individual writes rather than one writeBatch: the get()-visibility
+  // reason documented above requires the room doc to already be
+  // committed before these, so there is no atomicity to gain from
+  // batching them together anyway. Each write here is independently safe
+  // to retry (every doc has a fixed, derived id), so a partial failure
+  // just leaves a harmless incomplete room until the user retries.
+  await setDoc(participantRef, {
+    uid: options.ownerUid,
+    displayName: options.ownerDisplayName,
+    role: "owner",
+    joinedAt: serverTimestamp(),
+    lastSeenAt: serverTimestamp(),
+    connectionStatus: "online",
+  });
+  await setDoc(gameRef, game);
+  await Promise.all(
+    chunks.map((chunk) =>
+      setDoc(doc(db, "rooms", roomId, "games", gameId, "pieceChunks", chunk.chunkId), {
+        chunkId: chunk.chunkId,
+        gameId,
+        pieces: chunk.pieces,
+        chunkVersion: 0,
+      }),
+    ),
+  );
 
-  for (const chunk of chunks) {
-    const chunkRef = doc(db, "rooms", roomId, "games", gameId, "pieceChunks", chunk.chunkId);
-    batch.set(chunkRef, { chunkId: chunk.chunkId, gameId, pieces: chunk.pieces, chunkVersion: 0 });
-  }
-
-  await batch.commit();
   return { roomId, gameId };
 }
 

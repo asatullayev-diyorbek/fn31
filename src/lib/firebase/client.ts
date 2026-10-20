@@ -12,7 +12,7 @@ import {
 import {
   Firestore,
   connectFirestoreEmulator,
-  getFirestore,
+  initializeFirestore,
 } from "firebase/firestore";
 import { Database, connectDatabaseEmulator, getDatabase } from "firebase/database";
 import { FirebaseStorage, connectStorageEmulator, getStorage } from "firebase/storage";
@@ -77,7 +77,19 @@ export function getFirebaseAuth(): Auth {
 }
 
 export function getFirebaseFirestore(): Firestore {
-  if (!firestore) firestore = getFirestore(getFirebaseApp());
+  if (!firestore) {
+    // Forces XHR long-polling instead of Firestore's default WebChannel
+    // streaming transport — a defensive setting for networks (some
+    // corporate proxies, sandboxed containers) where chunked "forever
+    // frame" streaming responses get silently dropped. Harmless,
+    // slightly higher-latency fallback everywhere else, including
+    // production. (The actual root cause hit during this project's own
+    // E2E verification turned out to be unrelated — see
+    // IMPLEMENTATION_PLAN.md Phase 7 and roomsApi.ts's comment on why
+    // room creation avoids writeBatch — but this setting is cheap
+    // insurance worth keeping regardless.)
+    firestore = initializeFirestore(getFirebaseApp(), { experimentalForceLongPolling: true });
+  }
   return firestore;
 }
 

@@ -3,6 +3,7 @@ import type { GeometryResult } from "@/features/puzzle/geometry";
 import { PuzzleEngine } from "@/features/puzzle/engine/PuzzleEngine";
 import type { PiecePosition } from "@/features/puzzle/interactions";
 import type { PuzzleMode } from "@/types/firestore";
+import { registerEngineForE2E } from "@/testHooks";
 import styles from "./PuzzleBoard.module.css";
 
 export interface PuzzleBoardProps {
@@ -76,6 +77,7 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
     }
     engine.fitToScreen(container.clientWidth, container.clientHeight);
     props.onEngineReady?.(engine);
+    registerEngineForE2E(engine);
 
     const resizeObserver = new ResizeObserver(() => {
       engine.resizeCanvas();
@@ -84,6 +86,7 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
 
     return () => {
       resizeObserver.disconnect();
+      registerEngineForE2E(null);
       engine.destroy();
       engineRef.current = null;
     };

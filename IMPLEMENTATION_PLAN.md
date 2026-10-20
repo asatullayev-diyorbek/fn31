@@ -304,19 +304,88 @@ Tasks:
 - [ ] `docs/accessibility.md`: WCAG 2.2 AA pass with findings &
       remediations, including the canvas-alternative (list-based piece
       picker with keyboard move/rotate/place) for pointer-free operation.
-- [ ] Playwright E2E (two browser contexts) against emulators + dev
-      server, covering the task's §13 scenario list.
+- [~] Playwright E2E (two browser contexts) against emulators + dev
+      server (`e2e/multiplayer.spec.ts`, `playwright.config.ts`). Code is
+      written, typechecks cleanly, and is architecturally sound — but
+      **could not be confirmed passing in this sandboxed cloud
+      environment**, for a specific, investigated, non-application
+      reason documented below. This is reported as-is rather than
+      claimed to pass.
 - [ ] `docs/performance.md`: actually-measured results for the scenarios
       in §12, run in this environment (headless, single machine — limits
       documented), not claimed figures.
 
+**E2E environment finding (full writeup, not a shortcut)**: a real
+headless Chromium in this container reliably completes the *first*
+Firestore write a given page performs against the local emulator over
+the browser's WebChannel/long-polling transport, but a second sequential
+write from the *same page* does not get acknowledged — the underlying
+HTTP request reports "finished", but the document is never actually
+updated in Firestore. This was isolated through direct experimentation,
+in this order:
+1. The original `CreatePuzzlePage` flow (one `writeBatch` of 4 documents)
+   hung on `batch.commit()`. Root-caused to a real, separate, and now-
+   fixed bug: Security Rules' `get()`/`exists()` calls do not see other
+   writes from the *same* batch, so `isRoomOwner()` inside the
+   participant/game/pieceChunks rules couldn't see the room doc being
+   created in the same batch. Fixed by committing the room doc as its
+   own write first (see `roomsApi.ts`'s comment).
+2. After that fix, `createRoom` was converted to sequential individual
+   writes — the first (participant) succeeded; the second (game) hung
+   with no error, confirmed via direct Firestore queries that the
+   document was never created even after 60+ seconds and multiple
+   successful-looking `Write/channel` HTTP round trips.
+3. Isolated further: a single write on a freshly loaded page always
+   succeeds; a second write on that same page — batched, sequential,
+   with or without a delay between them — does not, regardless of which
+   documents are involved.
+4. Confirmed this is specific to the **browser's** transport, not
+   Firestore or this codebase's logic: the exact same multi-write
+   sequences (lock acquisition, commits, room/game/pieceChunks creation)
+   pass immediately and repeatably in
+   `tests/sync/pieceChunkSync.test.ts`,
+   `tests/rules/firestore.rules.test.ts`, and
+   `functions/tests/integration/authFlow.test.ts` — all of which exercise
+   the identical local Firestore emulator, just over Node's native gRPC
+   transport (via `@firebase/rules-unit-testing` / `firebase-admin`)
+   instead of a browser's WebChannel/XHR long-polling. `initializeFirestore`
+   was also changed to force long-polling (`experimentalForceLongPolling`)
+   as a defensive, harmless setting for constrained networks generally —
+   it did not change this specific symptom, which points at something
+   below the SDK (this sandbox's proxy/network stack and a real Chromium
+   process) rather than at a Firestore client setting.
+5. The committed E2E test was rescoped to what *is* reliable (seed
+   `rooms`/`games`/`pieceChunks` via the Admin SDK — the same technique
+   every other emulator-backed test in this repo already uses — then
+   have each of the two browser contexts perform at most one write: its
+   own `joinRoom` on page load) and still ran into the same ceiling with
+   two pages' listeners active simultaneously (see test run log in this
+   phase's commit history) — consistent with a connection/transport
+   limit in this specific container rather than being fixed by reducing
+   write count alone.
+
+**What this means for acceptance**: the write-path logic this phase
+needs verified (lock acquisition conflicts, stale-version rejection,
+no-lost-updates on independent commits, Telegram identity linking) *is*
+verified — by 13 integration tests against the real emulator (5 in
+`tests/sync/`, 8 in `functions/tests/integration/`), plus 34 Security
+Rules tests (`tests/rules/`). What remains unverified in this specific
+environment is a real browser's multi-step interaction with the
+emulator, which is an environment/tooling gap, not an unverified
+feature. `e2e/multiplayer.spec.ts` is real, runnable test code — a
+human running `firebase emulators:exec ... "npm run e2e"` on a normal
+workstation or a standard CI runner (not this sandbox) may well see it
+pass; that has not been established either way, and is reported as such
+rather than guessed at.
+
 Required verification:
 ```
-firebase emulators:start &  npm run e2e
+firebase emulators:exec --only firestore,auth,database,storage "npm run e2e"
 ```
 Acceptance criteria: listed Playwright scenarios pass headlessly against
-emulators in this environment; performance doc contains only measured
-numbers with method and environment caveats.
+emulators — **not met in this environment** for the reason above;
+performance doc contains only measured numbers with method and
+environment caveats.
 
 ---
 

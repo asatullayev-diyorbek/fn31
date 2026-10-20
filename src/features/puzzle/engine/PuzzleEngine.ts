@@ -109,6 +109,16 @@ export class PuzzleEngine {
     this.recomputeProgress();
   }
 
+  /** Screen (CSS-pixel, canvas-relative) coordinates of a piece's center — used by E2E tests to click exactly on a scattered piece without duplicating hit-test geometry. */
+  getPieceScreenCenter(pieceId: number): { x: number; y: number } | undefined {
+    const position = this.positions.get(pieceId);
+    if (!position) return undefined;
+    return this.renderer.worldToScreen(
+      position.x + this.pieceWidthPx / 2,
+      position.y + this.pieceHeightPx / 2,
+    );
+  }
+
   getPositions(): PositionMap {
     return this.positions;
   }
