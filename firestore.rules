@@ -1,0 +1,159 @@
+rules_version = '2';
+
+// See docs/security.md for the full threat model. Summary of the trust
+// boundary enforced here: anything that asserts *identity* (linking a
+// Telegram account, marking an auth transaction verified/completed,
+// creating telegramIdentities/users records) is writable ONLY by trusted
+// Cloud Functions using the Admin SDK, which bypasses these rules
+// entirely — so every `allow write` you see below for those collections
+// being `false` is intentional, not an oversight.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function roomDoc(roomId) {
+      return get(/databases/$(database)/documents/rooms/$(roomId));
+    }
+
+    function isRoomOwner(roomId) {
+      return isSignedIn() && roomDoc(roomId).data.ownerUid == request.auth.uid;
+    }
+
+    function isRoomParticipant(roomId) {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/rooms/$(roomId)/participants/$(request.auth.uid));
+    }
+
+    function isRoomMember(roomId) {
+      return isRoomOwner(roomId) || isRoomParticipant(roomId);
+    }
+
+    function onlyFieldsChanged(allowedFields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowedFields);
+    }
+
+    // ---------------------------------------------------------------
+    // Identity & authentication (Phase 4)
+    // ---------------------------------------------------------------
+
+    match /users/{uid} {
+      // Any signed-in user can read basic profile info (needed to show
+      // display names / avatars of other participants in a room).
+      allow get: if isSignedIn();
+      allow list: if false;
+      // Created only by the trusted completeAuthTransaction function.
+      allow create: if false;
+      // The owner may update their own *display* fields only — never
+      // telegramUserId (immutable identity key), createdAt, or uid.
+      allow update: if isSelf(uid) &&
+        onlyFieldsChanged(['displayName', 'photoUrl', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    match /telegramIdentities/{telegramUserId} {
+      // Clients never read or write this directly; Cloud Functions use
+      // the Admin SDK. This is the uniqueness anchor preventing duplicate
+      // Firebase accounts for the same Telegram user.
+      allow read, write: if false;
+    }
+
+    match /authTransactions/{transactionId} {
+      // The transactionId itself is a cryptographically random, single-
+      // use, short-lived token (see docs/telegram-auth.md). Knowing it is
+      // the access control — the same model Firebase's own email-link
+      // sign-in uses — which is why an unauthenticated `get` by exact ID
+      // is allowed while `list` (which would let a client enumerate
+      // other users' in-flight transactions) is always denied.
+      allow get: if true;
+      allow list: if false;
+      // Every state transition (pending -> verified -> completed/expired
+      // /failed) happens only inside trusted Cloud Functions.
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Rooms, participants, games (Phase 5)
+    // ---------------------------------------------------------------
+
+    match /rooms/{roomId} {
+      allow get: if resource.data.visibility == 'unlisted' || isRoomMember(roomId);
+      // "My owned rooms" dashboard query: where("ownerUid","==",uid).
+      allow list: if isSignedIn() && request.auth.uid == resource.data.ownerUid;
+      allow create: if isSignedIn() &&
+        request.resource.data.ownerUid == request.auth.uid &&
+        request.resource.data.status == 'open' &&
+        request.resource.data.visibility in ['private', 'unlisted'];
+      allow update: if isRoomOwner(roomId) &&
+        onlyFieldsChanged(['status', 'visibility', 'currentGameId', 'updatedAt', 'expiresAt']);
+      allow delete: if isRoomOwner(roomId);
+
+      match /participants/{uid} {
+        allow get: if isSelf(uid) || isRoomMember(roomId);
+        allow list: if isRoomMember(roomId);
+        allow create: if isSelf(uid) &&
+          request.resource.data.uid == uid &&
+          request.resource.data.role in ['owner', 'member'] &&
+          (request.resource.data.role == 'owner') == (request.auth.uid == roomDoc(roomId).data.ownerUid);
+        allow update: if isSelf(uid) &&
+          onlyFieldsChanged(['lastSeenAt', 'connectionStatus', 'displayName', 'photoUrl']);
+        allow delete: if isSelf(uid) || isRoomOwner(roomId);
+      }
+
+      match /games/{gameId} {
+        allow get: if isRoomMember(roomId);
+        allow list: if isRoomMember(roomId);
+        allow create: if isRoomOwner(roomId) &&
+          request.resource.data.pieceCount >= 25 && request.resource.data.pieceCount <= 500 &&
+          request.resource.data.stateVersion == 0;
+        // Clients may only move progress/version/completion forward —
+        // never rewrite the puzzle's identity (mode, image, geometry).
+        allow update: if isRoomMember(roomId) &&
+          onlyFieldsChanged(['stateVersion', 'progress', 'completedAt', 'updatedAt']) &&
+          request.resource.data.stateVersion > resource.data.stateVersion;
+        allow delete: if isRoomOwner(roomId);
+
+        match /pieceChunks/{chunkId} {
+          allow get: if isRoomMember(roomId);
+          allow list: if isRoomMember(roomId);
+          allow create: if isRoomOwner(roomId) && request.resource.data.chunkVersion == 0;
+          // The core stale-write defense: a write is only accepted if it
+          // advances the chunk's version by exactly one step from what
+          // the client last read. Anything else — a stale snapshot, a
+          // replayed/duplicate event, two racing writers — is rejected
+          // here, not just by client-side convention.
+          allow update: if isRoomMember(roomId) &&
+            request.resource.data.chunkVersion == resource.data.chunkVersion + 1;
+          allow delete: if false;
+        }
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Images (Phase 5)
+    // ---------------------------------------------------------------
+
+    match /images/{imageId} {
+      // Gallery images (ownerUid == null) are seeded by a trusted script,
+      // never created by clients. Image *metadata* is readable by any
+      // signed-in user by design — see docs/security.md "Image privacy"
+      // for why the real privacy boundary is the room's unguessable
+      // invite code and participant list, not the image record itself.
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && request.auth.uid == resource.data.ownerUid;
+      allow create: if isSignedIn() &&
+        request.resource.data.ownerUid == request.auth.uid &&
+        request.resource.data.source == 'upload' &&
+        request.resource.data.sizeBytes <= 15 * 1024 * 1024 &&
+        request.resource.data.contentType in ['image/jpeg', 'image/png', 'image/webp'];
+      allow update: if false;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.ownerUid;
+    }
+  }
+}

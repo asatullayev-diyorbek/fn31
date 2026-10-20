@@ -1,0 +1,21 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "liveDrag": {
+      "$gameId": {
+        "$pieceId": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          ".validate": "newData.hasChildren(['uid', 'x', 'y', 'rotation', 'updatedAt']) && newData.child('uid').val() == auth.uid",
+          "uid": { ".validate": "newData.isString()" },
+          "x": { ".validate": "newData.isNumber()" },
+          "y": { ".validate": "newData.isNumber()" },
+          "rotation": { ".validate": "newData.isNumber()" },
+          "updatedAt": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
+    }
+  }
+}

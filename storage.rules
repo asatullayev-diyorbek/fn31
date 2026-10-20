@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// See docs/security.md. Mirrors firestore.rules' /images collection:
+// any authenticated user may read (the privacy boundary is the room's
+// invite code, not the image bytes), but only the uploader may write or
+// delete their own path, with server-enforced size/type limits — never
+// trusting the client-declared MIME type alone, since Storage rules'
+// `request.resource.contentType` reflects what was actually uploaded,
+// not a filename extension.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /images/{uid}/{imageId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+        request.auth.uid == uid &&
+        request.resource.size <= 15 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
