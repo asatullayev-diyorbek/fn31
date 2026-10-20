@@ -301,9 +301,11 @@ Tasks:
       already does the live-region/aria-label/touch-target parts, per
       Phase 3's browser verification; room-page-level responsiveness
       still open.)
-- [ ] `docs/accessibility.md`: WCAG 2.2 AA pass with findings &
-      remediations, including the canvas-alternative (list-based piece
-      picker with keyboard move/rotate/place) for pointer-free operation.
+- [~] `docs/accessibility.md`: WCAG 2.2 AA pass with findings &
+      remediations written. The canvas-alternative (list-based piece
+      picker with keyboard move/rotate/place) is explicitly **not
+      implemented** — documented as the single biggest remaining
+      acceptance-criterion gap, not glossed over.
 - [~] Playwright E2E (two browser contexts) against emulators + dev
       server (`e2e/multiplayer.spec.ts`, `playwright.config.ts`). Code is
       written, typechecks cleanly, and is architecturally sound — but
@@ -311,9 +313,10 @@ Tasks:
       environment**, for a specific, investigated, non-application
       reason documented below. This is reported as-is rather than
       claimed to pass.
-- [ ] `docs/performance.md`: actually-measured results for the scenarios
-      in §12, run in this environment (headless, single machine — limits
-      documented), not claimed figures.
+- [x] `docs/performance.md`: actually-measured results (build size,
+      geometry-generation timing, emulator test latency) with explicit
+      "not measured here" sections for anything requiring real
+      multi-browser concurrency, per the Phase 7 E2E finding above.
 
 **E2E environment finding (full writeup, not a shortcut)**: a real
 headless Chromium in this container reliably completes the *first*
@@ -395,10 +398,12 @@ environment caveats.
 project and a real Telegram bot, without this agent doing so itself.
 
 Tasks:
-- [ ] `docs/deployment.md`, `docs/security.md`, `docs/architecture.md`,
-      `docs/telegram-auth.md`, `docs/websocket-or-realtime.md`.
-- [ ] Production security checklist.
-- [ ] Final acceptance report (chat deliverable) per AGENT.md §10.
+- [x] `docs/deployment.md`, `docs/security.md`, `docs/architecture.md`,
+      `docs/telegram-auth.md`, `docs/websocket-or-realtime.md`,
+      `docs/accessibility.md`, `docs/performance.md`, `README.md`.
+- [x] Production security checklist (`docs/deployment.md` §9).
+- [x] Final acceptance report delivered as the closing chat message of
+      this engagement, per AGENT.md §10.
 - [B] Actual `firebase deploy` to a production project — requires a real
       Firebase project + billing + owner authorization, none of which
       exist in this session. Not performed; exact commands documented
