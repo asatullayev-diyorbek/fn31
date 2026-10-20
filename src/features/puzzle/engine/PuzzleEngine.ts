@@ -204,7 +204,7 @@ export class PuzzleEngine {
   }
 
   rotateSelection(delta: 90 | -90 | 180): void {
-    if (!this.selectedGroupId) return;
+    if (!this.config.rotationEnabled || !this.selectedGroupId) return;
     const members = getGroupMembers(this.groups, this.selectedGroupId);
     if (members.length === 0) return;
     const centroid = this.groupCentroid(members);

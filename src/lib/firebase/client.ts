@@ -17,7 +17,7 @@ import {
 import { Database, connectDatabaseEmulator, getDatabase } from "firebase/database";
 import { FirebaseStorage, connectStorageEmulator, getStorage } from "firebase/storage";
 import { connectFunctionsEmulator, getFunctions, Functions } from "firebase/functions";
-import { appCheckSiteKey, firebaseConfig, useFirebaseEmulators } from "@/app/config";
+import { appCheckSiteKey, firebaseConfig, isFirebaseConfigured, useFirebaseEmulators } from "@/app/config";
 
 /**
  * Single composition point for every Firebase service the client uses.
@@ -96,8 +96,21 @@ export function getFirebaseFunctions(): Functions {
   return functions;
 }
 
-/** Call once at app startup, before any other Firebase SDK usage. */
+/**
+ * Call once at app startup, before any other Firebase SDK usage. A
+ * missing .env (no real/emulator Firebase project configured yet — the
+ * normal state of this repository until a human completes the setup in
+ * docs/deployment.md) is not a crash: Firebase-dependent features simply
+ * report "not configured" instead of touching the SDK at all.
+ */
 export function bootstrapFirebase(): void {
+  if (!isFirebaseConfigured()) {
+    console.warn(
+      "[firebase] No Firebase project configured (.env missing or incomplete) — " +
+        "auth/puzzle-room features are disabled until docs/deployment.md's setup is done.",
+    );
+    return;
+  }
   getFirebaseApp();
   initializeClientAppCheck();
   connectEmulatorsOnce();

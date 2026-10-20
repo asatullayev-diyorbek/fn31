@@ -22,6 +22,11 @@ export const telegramBotUsername = readEnv("VITE_TELEGRAM_BOT_USERNAME");
 export const useFirebaseEmulators =
   readEnv("VITE_USE_FIREBASE_EMULATORS") === "true";
 
+/** False until a real (or emulator-pointed) Firebase project is configured via .env — see .env.example. */
+export function isFirebaseConfigured(): boolean {
+  return Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
+}
+
 export const PUZZLE_PIECE_COUNT_MIN = 25;
 export const PUZZLE_PIECE_COUNT_MAX = 500;
 export const AUTH_TRANSACTION_TTL_MS = 5 * 60 * 1000;

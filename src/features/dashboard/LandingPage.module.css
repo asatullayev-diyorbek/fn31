@@ -1,0 +1,55 @@
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.hero {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.hero h1 {
+  font-size: clamp(28px, 5vw, 44px);
+  margin: 0;
+}
+
+.heroSubtitle {
+  max-width: 600px;
+  color: var(--color-text-muted);
+  font-size: 17px;
+}
+
+.heroActions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.demoLink {
+  font-size: 14px;
+}
+
+.section h2 {
+  font-size: 24px;
+  margin-bottom: var(--space-4);
+}
+
+.steps {
+  display: grid;
+  gap: var(--space-3);
+  padding-left: var(--space-6);
+}
+
+.modeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
