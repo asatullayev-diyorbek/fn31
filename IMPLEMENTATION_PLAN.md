@@ -115,9 +115,9 @@ Tasks:
       (Admin SDK bypasses rules; client has read-only + create via
       callable only); `telegramIdentities` and `users.telegramId` are
       never client-writable.
-- [x] Frontend `features/telegram-auth`: deep-link button, QR fallback,
-      Firestore listener on the transaction doc, expiry countdown, sign-in
-      with custom token, redirect.
+- [ ] Frontend `features/telegram-auth`: deep-link button, Firestore
+      listener on the transaction doc, expiry countdown, sign-in with
+      custom token, redirect.
 - [x] Unit tests: token generation entropy/uniqueness, transaction state
       machine (pending→verified→completed / →expired / →failed), replay
       rejection, webhook secret verification.
@@ -132,11 +132,42 @@ Tasks:
 
 Required verification:
 ```
-firebase emulators:exec --only auth,firestore,functions "npm run test:functions"
+firebase emulators:exec --only firestore,auth "npm --prefix functions run test:integration"
+npm --prefix functions test        # pure unit tests, no emulator needed
 ```
 Acceptance criteria: all transaction-state and rules tests pass against
 the emulator; no bot token or webhook secret appears anywhere in
 `src/`, `VITE_*` env, or a committed file.
+
+**Status: code complete and verified against the real Firebase Emulator
+Suite (Firestore + Auth), except the one genuinely external step.**
+- `functions/src/auth/{token,transactionLogic,createAuthTransaction,
+  completeAuthTransaction,identityLinking}.ts` and
+  `functions/src/telegram/{webhookSecurity,parseUpdate,handleTelegramStart}.ts`
+  implement every trust-boundary rule in this phase, including the
+  create-vs-link race fix (client-chosen UID reserved inside a Firestore
+  transaction, Auth user created only by the transaction's winner) and
+  idempotent retry (completing an already-completed transaction returns
+  the same uid instead of erroring or duplicating).
+- 15 pure unit tests (`functions/src/**/*.test.ts`, token entropy,
+  transaction state machine, webhook secret constant-time comparison,
+  `/start` command parsing) — passing, no emulator required.
+- 8 integration tests (`functions/tests/integration/authFlow.test.ts`)
+  against the real Firestore + Auth emulators — passing. Covers: full
+  pending→verified→completed flow creating a real Firebase Auth user;
+  replay of an already-verified token rejected; unknown token rejected;
+  TTL expiry before verification; completing a never-verified transaction
+  rejected; idempotent re-completion (same uid, no duplicate Auth user);
+  a second login from the same Telegram account reusing the same uid
+  (username change handled as a mutable field, not a new identity); a
+  hand-crafted "verified" transaction with no telegram identity fields
+  still refused by the function layer (defense in depth under the rules
+  tested in Phase 5).
+- `createAuthTransactionCallable`, `completeAuthTransactionCallable`,
+  `telegramWebhook` (`functions/src/index.ts`) wire these into real
+  Cloud Functions (v2, onCall/onRequest) using `defineSecret` for
+  `TELEGRAM_BOT_TOKEN`/`TELEGRAM_WEBHOOK_SECRET` — never read from
+  `VITE_*`, never logged.
 
 ---
 
@@ -148,22 +179,25 @@ Storage rules for images, full rules test suite.
 Tasks:
 - [x] Schema: `rooms/{roomId}`, `rooms/{roomId}/participants/{uid}`,
       `rooms/{roomId}/games/{gameId}`, `images/{imageId}` + Storage paths.
-- [x] `CreatePuzzlePage`: mode, image source (gallery or upload), piece
-      count (validated 25–500 inclusive, server-re-validated), difficulty
-      preset, visibility, generates invite link.
-- [x] `DashboardPage`: create, join by code/link, recent rooms, owned
-      rooms, profile, logout — all scoped to the authenticated user's own
-      data via rules-enforced queries.
 - [x] Firestore rules: room owner/participant checks, piece-count bounds,
       field allow-lists on writes, no cross-room reads.
 - [x] Storage rules: authenticated-only upload, path = `images/{uid}/...`,
       content-type allow-list, size limit, no public read of other users'
       originals unless the room is public.
-- [x] Image upload pipeline: client-side decode validation
-      (`createImageBitmap`) before upload, not just extension/MIME check.
 - [x] Rules tests (`@firebase/rules-unit-testing`): default-deny,
       ownership, membership, field tampering, oversized piece count,
-      cross-room access, storage content-type/size rejection.
+      cross-room access, storage content-type/size rejection. (28 + 6
+      tests, run and passing against the real emulator — see Phase 4's
+      status note; written together with Phase 4's rules since both
+      phases share one `firestore.rules` file.)
+- [ ] `CreatePuzzlePage`: mode, image source (gallery or upload), piece
+      count (validated 25–500 inclusive, server-re-validated), difficulty
+      preset, visibility, generates invite link.
+- [ ] `DashboardPage`: create, join by code/link, recent rooms, owned
+      rooms, profile, logout — all scoped to the authenticated user's own
+      data via rules-enforced queries.
+- [ ] Image upload pipeline: client-side decode validation
+      (`createImageBitmap`) before upload, not just extension/MIME check.
 
 Required verification:
 ```
@@ -178,31 +212,31 @@ case listed in the task's §13 "Security tests".
 
 **Goal**: multiple clients manipulate the same game safely and converge.
 
-Tasks:
-- [x] Durable state: `games/{gameId}` holds `stateVersion`,
-      `pieces: Record<pieceId, PieceState>` (bounded — one doc up to the
-      MVP max of 500 pieces, sharded into chunk sub-documents if a single
-      doc would approach the 1 MiB Firestore limit; documented threshold).
-- [x] Ephemeral state: RTDB `liveDrag/{gameId}/{pieceId}` — throttled
+Tasks (schema already shipped in Phase 4/5's `pieceChunks` + rules; this
+phase is the client-side sync engine that writes/reads it):
+- [x] Durable state schema: `pieceChunks/{chunkId}` holds `chunkVersion` +
+      a bounded `pieces` map; the rules' `chunkVersion == old + 1` check
+      (Phase 4/5, already tested) is the server-enforced half of
+      stale-write rejection.
+- [ ] Ephemeral state: RTDB `liveDrag/{gameId}/{pieceId}` client — throttled
       (~20 Hz max) position broadcast while a piece is actively dragged by
       its lock holder, auto-cleared on disconnect via `onDisconnect()`.
-- [x] Piece lease: `lockedBy`/`lockExpiresAt` fields; acquiring a lock is a
+      (Rules for this already shipped in Phase 4/5's `database.rules.json`.)
+- [ ] Piece lease: `lockedBy`/`lockExpiresAt` fields; acquiring a lock is a
       transaction that fails if already held and unexpired; leases expire
       after N seconds of inactivity so a dropped client doesn't block a
       piece forever.
-- [x] Reconciliation: local optimistic move is applied immediately;
+- [ ] Reconciliation: local optimistic move is applied immediately;
       authoritative Firestore update (on drag end) is the source of truth;
       a client whose optimistic state diverges snaps to the authoritative
       value when it arrives.
-- [x] Stale-write rejection: every durable write includes the
-      `baseVersion` it was computed from; rules/function reject writes
-      whose `baseVersion` != current `stateVersion`.
-- [x] Reconnection: on reconnect, client re-subscribes and replaces local
+- [ ] Reconnection: on reconnect, client re-subscribes and replaces local
       state wholesale with the latest snapshot rather than attempting to
       replay missed deltas.
-- [x] Unit/integration tests: concurrent lock acquisition (one wins),
-      stale version rejected, group move preserves relative offsets,
-      disconnect releases lock after lease expiry (simulated clock).
+- [ ] Integration tests: concurrent lock acquisition (one wins), stale
+      version rejected end-to-end through the sync client (not just the
+      rules layer), group move preserves relative offsets, disconnect
+      releases lock after lease expiry (simulated clock).
 
 Required verification:
 ```
@@ -219,13 +253,16 @@ operations (property-based test).
 **Goal**: everything wired together in the real UI; responsive; audited.
 
 Tasks:
-- [x] `PuzzleRoomPage`: canvas + tray, zoom/pan controls, invite-link copy,
+- [ ] `PuzzleRoomPage`: canvas + tray, zoom/pan controls, invite-link copy,
       participant list w/ connection status, progress, completion banner,
       reference-image toggle, loading/reconnecting/error states.
-- [x] Responsive layout incl. touch target sizing; `prefers-reduced-motion`
+- [~] Responsive layout incl. touch target sizing; `prefers-reduced-motion`
       respected; focus-visible states; icon buttons have `aria-label`s;
-      live-region progress/completion announcements.
-- [x] `docs/accessibility.md`: WCAG 2.2 AA pass with findings &
+      live-region progress/completion announcements. (`PuzzleBoard`
+      already does the live-region/aria-label/touch-target parts, per
+      Phase 3's browser verification; room-page-level responsiveness
+      still open.)
+- [ ] `docs/accessibility.md`: WCAG 2.2 AA pass with findings &
       remediations, including the canvas-alternative (list-based piece
       picker with keyboard move/rotate/place) for pointer-free operation.
 - [ ] Playwright E2E (two browser contexts) against emulators + dev
@@ -250,9 +287,9 @@ numbers with method and environment caveats.
 project and a real Telegram bot, without this agent doing so itself.
 
 Tasks:
-- [x] `docs/deployment.md`, `docs/security.md`, `docs/architecture.md`,
+- [ ] `docs/deployment.md`, `docs/security.md`, `docs/architecture.md`,
       `docs/telegram-auth.md`, `docs/websocket-or-realtime.md`.
-- [x] Production security checklist.
+- [ ] Production security checklist.
 - [ ] Final acceptance report (chat deliverable) per AGENT.md §10.
 - [B] Actual `firebase deploy` to a production project — requires a real
       Firebase project + billing + owner authorization, none of which

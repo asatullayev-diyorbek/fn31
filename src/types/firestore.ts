@@ -32,6 +32,8 @@ export interface AuthTransaction {
   expiresAt: Timestamp;
   telegramUserId?: string; // set only by the trusted webhook handler, once verified
   telegramUsername?: string;
+  telegramFirstName?: string;
+  telegramLastName?: string;
   uid?: string; // set only once completed
   sessionMarker: string; // random id the browser holds; scopes the Firestore read, not identity proof
   failureReason?: string;

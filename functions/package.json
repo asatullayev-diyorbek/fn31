@@ -1,0 +1,29 @@
+{
+  "name": "puzzletogether-functions",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": { "node": "20" },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "firebase-admin": "13.0.2",
+    "firebase-functions": "6.2.0",
+    "zod": "3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.18.0",
+    "@typescript-eslint/eslint-plugin": "8.19.1",
+    "@typescript-eslint/parser": "8.19.1",
+    "eslint": "9.18.0",
+    "globals": "15.14.0",
+    "typescript": "5.7.3",
+    "vitest": "2.1.8"
+  }
+}
