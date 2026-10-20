@@ -3,7 +3,16 @@ import react from "@vitejs/plugin-react";
 import path from "node:path";
 
 export default defineConfig({
-  plugins: [react()],
+  // Cast needed because @vitejs/plugin-react resolves against the root
+  // `vite` package while `vitest/config` re-exports its own bundled
+  // `vite`'s types — two structurally-identical-but-nominally-distinct
+  // `Plugin` types that don't satisfy each other at the type level only
+  // (both are the real Vite plugin API at runtime). Purely a tooling-
+  // config type wrinkle (tracked upstream in vitest/vite), not a runtime
+  // issue — hence the narrow, explicit `unknown` cast rather than loosening
+  // this file's types more broadly.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  plugins: [react()] as unknown as any[],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

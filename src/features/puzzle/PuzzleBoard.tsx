@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GeometryResult } from "@/features/puzzle/geometry";
 import { PuzzleEngine } from "@/features/puzzle/engine/PuzzleEngine";
+import type { PiecePosition } from "@/features/puzzle/interactions";
 import type { PuzzleMode } from "@/types/firestore";
 import styles from "./PuzzleBoard.module.css";
 
@@ -14,15 +15,23 @@ export interface PuzzleBoardProps {
   rotationEnabled: boolean;
   snapToleranceRatio: number;
   seed: string;
+  /** Starting positions (e.g. the room's latest Firestore snapshot). When omitted, pieces are scattered locally — used by the offline demo. */
+  initialPositions?: ReadonlyMap<number, PiecePosition>;
   onProgressChange?: (progress: number) => void;
   onComplete?: () => void;
+  /** The synchronization layer (Phase 6) hooks into these to persist drag-end positions and broadcast live drag previews. */
+  onCommitPositions?: (changed: ReadonlyMap<number, PiecePosition>) => void;
+  onDragStart?: (pieceIds: readonly number[]) => void;
+  onDragMove?: (pieceIds: readonly number[], positions: ReadonlyMap<number, PiecePosition>) => void;
+  /** Hands the parent a direct reference to the created engine, so remote snapshot updates can be applied via `engine.applyRemotePieceUpdate(...)`. */
+  onEngineReady?: (engine: PuzzleEngine) => void;
 }
 
 /**
- * The shared puzzle canvas. Purely local in this component — the
- * synchronization layer (Phase 6) wraps `PuzzleEngine.onCommitPositions`
- * separately via `usePuzzleSync`; this component owns only rendering and
- * pointer/keyboard interaction wiring.
+ * The shared puzzle canvas. Rendering and pointer/keyboard interaction
+ * live entirely here; real-time synchronization (Phase 6) is injected via
+ * props rather than this component knowing Firebase exists — see
+ * `features/puzzle/synchronization` and `PuzzleRoomPage`.
  */
 export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -53,12 +62,20 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
           setAnnouncement("Pazl muvaffaqiyatli yig'ildi!");
           props.onComplete?.();
         },
+        onCommitPositions: props.onCommitPositions,
+        onDragStart: props.onDragStart,
+        onDragMove: props.onDragMove,
       },
     );
     engineRef.current = engine;
     engine.resizeCanvas();
-    engine.scatterPieces(props.seed, container.clientWidth, container.clientHeight);
+    if (props.initialPositions && props.initialPositions.size > 0) {
+      engine.setAllPositions(props.initialPositions);
+    } else {
+      engine.scatterPieces(props.seed, container.clientWidth, container.clientHeight);
+    }
     engine.fitToScreen(container.clientWidth, container.clientHeight);
+    props.onEngineReady?.(engine);
 
     const resizeObserver = new ResizeObserver(() => {
       engine.resizeCanvas();

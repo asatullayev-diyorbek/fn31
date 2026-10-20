@@ -1,0 +1,87 @@
+.page {
+  display: flex;
+  height: calc(100vh - 130px);
+  min-height: 500px;
+}
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  padding: var(--space-4);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  overflow-y: auto;
+}
+
+.inviteRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.inviteCode {
+  background: var(--color-bg);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.modeInfo,
+.progressInfo {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.participants {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.participants li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 14px;
+}
+
+.online,
+.offline {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.online {
+  background: var(--color-success);
+}
+
+.offline {
+  background: var(--color-text-muted);
+}
+
+.boardArea {
+  flex: 1;
+  padding: var(--space-4);
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .page {
+    flex-direction: column;
+    height: auto;
+  }
+  .sidebar {
+    width: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .boardArea {
+    height: 70vh;
+  }
+}

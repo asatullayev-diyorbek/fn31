@@ -31,6 +31,10 @@ export interface EngineEvents {
   onComplete?: () => void;
   /** Fired once a drag ends and a piece/group's position should be persisted (Phase 6 hooks in here). */
   onCommitPositions?: (changed: ReadonlyMap<number, PiecePosition>) => void;
+  /** Fired when a drag begins — the sync layer uses this to attempt a lock acquisition for every member of the group. */
+  onDragStart?: (pieceIds: readonly number[]) => void;
+  /** Fired on every drag move (the sync layer is expected to throttle its own network writes, e.g. via createThrottledPublisher). */
+  onDragMove?: (pieceIds: readonly number[], positions: PositionMap) => void;
 }
 
 /**
@@ -177,6 +181,7 @@ export class PuzzleEngine {
       startScreenY: screenY,
       startPositions: new Map(this.positions),
     };
+    this.events.onDragStart?.(getGroupMembers(this.groups, groupId));
   }
 
   onPointerMove(pointerId: number, screenX: number, screenY: number): void {
@@ -185,12 +190,14 @@ export class PuzzleEngine {
     const dx = (screenX - this.drag.startScreenX) / viewport.zoom;
     const dy = (screenY - this.drag.startScreenY) / viewport.zoom;
 
-    for (const pieceId of getGroupMembers(this.groups, this.drag.groupId)) {
+    const members = getGroupMembers(this.groups, this.drag.groupId);
+    for (const pieceId of members) {
       const start = this.drag.startPositions.get(pieceId);
       if (!start) continue;
       this.positions.set(pieceId, { ...start, x: start.x + dx, y: start.y + dy });
     }
     this.syncRenderer();
+    this.events.onDragMove?.(members, this.positions);
   }
 
   onPointerUp(pointerId: number): boolean {

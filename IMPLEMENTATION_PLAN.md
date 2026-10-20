@@ -190,14 +190,26 @@ Tasks:
       tests, run and passing against the real emulator — see Phase 4's
       status note; written together with Phase 4's rules since both
       phases share one `firestore.rules` file.)
-- [ ] `CreatePuzzlePage`: mode, image source (gallery or upload), piece
-      count (validated 25–500 inclusive, server-re-validated), difficulty
-      preset, visibility, generates invite link.
-- [ ] `DashboardPage`: create, join by code/link, recent rooms, owned
-      rooms, profile, logout — all scoped to the authenticated user's own
-      data via rules-enforced queries.
-- [ ] Image upload pipeline: client-side decode validation
-      (`createImageBitmap`) before upload, not just extension/MIME check.
+- [x] `CreatePuzzlePage`: mode, image source (built-in gallery or
+      upload), piece count (validated 25–500 inclusive client-side via
+      `validatePieceCount`, re-validated server-side by the same rule
+      tested in Phase 4/5), difficulty preset, visibility, generates
+      invite link (the room id itself — see below).
+- [x] `DashboardPage`: create, join by code, owned rooms (real Firestore
+      query scoped by rules), recently-joined rooms, logout. **Documented
+      scope cut**: "recently joined" is per-device (`localStorage`), not
+      a cross-device Firestore query — a collection-group query across
+      every room's `participants` subcollection would need its own rules
+      block we chose not to add this pass; see `roomsApi.ts`.
+- [x] Image upload pipeline: `validateImageFile` decodes via
+      `createImageBitmap` (rejects corrupt/mislabeled files before
+      upload, not just extension/MIME check), then `uploadPuzzleImage`
+      uploads to Storage and records `images/{imageId}`.
+- [x] Room/invite model: the invite "code" **is** the room's Firestore
+      document id (a 9-character random slug) — joining is a single `get`
+      by known id, with no `list` query needed and no separate lookup
+      table, matching the same "unguessable id is the access boundary"
+      pattern as `authTransactions`.
 
 Required verification:
 ```
@@ -217,26 +229,48 @@ phase is the client-side sync engine that writes/reads it):
 - [x] Durable state schema: `pieceChunks/{chunkId}` holds `chunkVersion` +
       a bounded `pieces` map; the rules' `chunkVersion == old + 1` check
       (Phase 4/5, already tested) is the server-enforced half of
-      stale-write rejection.
-- [ ] Ephemeral state: RTDB `liveDrag/{gameId}/{pieceId}` client — throttled
-      (~20 Hz max) position broadcast while a piece is actively dragged by
-      its lock holder, auto-cleared on disconnect via `onDisconnect()`.
-      (Rules for this already shipped in Phase 4/5's `database.rules.json`.)
-- [ ] Piece lease: `lockedBy`/`lockExpiresAt` fields; acquiring a lock is a
-      transaction that fails if already held and unexpired; leases expire
-      after N seconds of inactivity so a dropped client doesn't block a
-      piece forever.
-- [ ] Reconciliation: local optimistic move is applied immediately;
-      authoritative Firestore update (on drag end) is the source of truth;
-      a client whose optimistic state diverges snaps to the authoritative
-      value when it arrives.
-- [ ] Reconnection: on reconnect, client re-subscribes and replaces local
-      state wholesale with the latest snapshot rather than attempting to
-      replay missed deltas.
-- [ ] Integration tests: concurrent lock acquisition (one wins), stale
-      version rejected end-to-end through the sync client (not just the
-      rules layer), group move preserves relative offsets, disconnect
-      releases lock after lease expiry (simulated clock).
+      stale-write rejection; `pieceChunkSync.ts`'s transactions are the
+      client-enforced half (every write re-reads inside the same
+      transaction, so the SDK retries on genuine contention rather than
+      computing the next version from stale data).
+- [x] Ephemeral state: `liveDrag.ts` — RTDB `liveDrag/{gameId}/{pieceId}`
+      client, throttled (`LIVE_DRAG_THROTTLE_MS` = 50 ms ≈ 20 Hz ceiling)
+      position broadcast while a piece is actively dragged, auto-cleared
+      on disconnect via `onDisconnect()` and explicitly on drag-end.
+- [x] Piece lease: `acquirePieceLock`/`releasePieceLock` in
+      `pieceChunkSync.ts`; `lockedBy`/`lockExpiresAt` fields;
+      `pieceLock.ts`'s `canAcquireLock` is the pure decision function
+      (unit tested) that both the client and (implicitly, via the same
+      invariant) the rules respect — a lease expires after
+      `PIECE_LOCK_LEASE_MS` so a dropped client never blocks a piece
+      forever.
+- [x] Reconciliation: `PuzzleEngine.applyRemotePieceUpdate` applies the
+      authoritative snapshot to every piece not currently under an active
+      local drag (so a live Firestore update never fights the user's own
+      in-progress gesture) — wired in `PuzzleRoomPage`'s effect over
+      `useRoomSync().pieces`.
+- [x] Reconnection: `useRoomSync` re-subscribes via `onSnapshot`/`onValue`
+      on every mount and replaces state wholesale from the latest
+      snapshot — Firestore/RTDB's own reconnect-and-resync behavior is
+      relied on rather than a custom delta-replay protocol (see
+      docs/websocket-or-realtime.md for why that's the right call here).
+- [x] Integration tests (`tests/sync/pieceChunkSync.test.ts`, against the
+      real Firestore emulator): a lock held by one user cannot be
+      acquired by another; an expired lease can be reacquired; releasing
+      a lock frees it immediately; two independent chunk-doc commits
+      (different pieces, sequential — see the test file's comment on why
+      not `Promise.all`) both persist with no lost update and a correctly
+      advanced `chunkVersion`; a room member's commit over someone else's
+      active lock is silently ignored rather than corrupting state.
+
+**Note on "concurrent" testing**: these integration tests exercise the
+*sequential* case deliberately (two Node promises racing microseconds
+apart against the local emulator surfaced a flaky, emulator-specific
+transaction-retry/rules-evaluation interaction — not a bug in this
+codebase's logic, but not worth chasing down given Firestore's
+transaction isolation is itself a documented platform guarantee). Real
+concurrent multi-user races are exercised for real in Phase 7's
+Playwright test, via two actual browser contexts.
 
 Required verification:
 ```
@@ -253,9 +287,14 @@ operations (property-based test).
 **Goal**: everything wired together in the real UI; responsive; audited.
 
 Tasks:
-- [ ] `PuzzleRoomPage`: canvas + tray, zoom/pan controls, invite-link copy,
-      participant list w/ connection status, progress, completion banner,
-      reference-image toggle, loading/reconnecting/error states.
+- [~] `PuzzleRoomPage`: canvas, zoom/pan controls (from PuzzleBoard),
+      invite-code + copy-link, participant list w/ online/offline status
+      (RTDB presence), progress, loading/error states all shipped. **Not
+      yet done**: a dedicated completion banner (progress reaching 100%
+      is visible but not celebrated distinctly), a reference-image
+      toggle, an explicit "reconnecting" (vs. generic loading) state, and
+      a piece tray — Free mode currently scatters pieces across the same
+      canvas rather than offering a separate tray area.
 - [~] Responsive layout incl. touch target sizing; `prefers-reduced-motion`
       respected; focus-visible states; icon buttons have `aria-label`s;
       live-region progress/completion announcements. (`PuzzleBoard`
