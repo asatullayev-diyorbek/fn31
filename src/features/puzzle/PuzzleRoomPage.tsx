@@ -59,11 +59,21 @@ export function PuzzleRoomPage(): JSX.Element {
     return map;
   }, [sync.pieces]);
 
-  // Apply every remote snapshot update to the live engine (guarded internally against fighting an active local drag).
+  const localCommitTimesRef = useRef<Map<number, { timestamp: number; pos: PiecePosition }>>(new Map());
+
+  // Apply every remote snapshot update to the live engine (guarded against reverting recent local moves).
   useEffect(() => {
     const engine = engineRef.current;
     if (!engine) return;
+    const now = Date.now();
     for (const [pieceId, piece] of sync.pieces) {
+      const localCommit = localCommitTimesRef.current.get(pieceId);
+      // If we moved this piece locally within the last 3000ms and server still has old coordinates, don't revert it!
+      if (localCommit && (now - localCommit.timestamp < 3000)) {
+        if (Math.abs(piece.x - localCommit.pos.x) > 1 || Math.abs(piece.y - localCommit.pos.y) > 1) {
+          continue;
+        }
+      }
       engine.applyRemotePieceUpdate(pieceId, { x: piece.x, y: piece.y, rotation: piece.rotation }, piece.groupId);
       engine.setPieceLockedByOther(pieceId, Boolean(piece.lockedBy) && piece.lockedBy !== sync.myUid);
     }
@@ -74,12 +84,32 @@ export function PuzzleRoomPage(): JSX.Element {
   }
 
   function handleDragMove(pieceIds: readonly number[], positions: ReadonlyMap<number, PiecePosition>): void {
-    for (const pieceId of pieceIds) { const position = positions.get(pieceId); if (position) getSocket().emit("piece:move", { roomId, pieceId, ...position }); }
+    for (const pieceId of pieceIds) {
+      const position = positions.get(pieceId);
+      if (position) getSocket().emit("piece:move", { roomId, pieceId, ...position });
+    }
   }
 
   async function handleCommitPositions(changed: ReadonlyMap<number, PiecePosition>): Promise<void> {
+    const now = Date.now();
+    for (const [pieceId, position] of changed) {
+      localCommitTimesRef.current.set(pieceId, { timestamp: now, pos: position });
+    }
     if (!user || !sync.game) return;
-    await api(`/api/rooms/${encodeURIComponent(roomId)}/pieces`, { method: "POST", body: JSON.stringify({ gameId: sync.game.gameId, pieces: Array.from(changed.entries()).map(([pieceId, position]) => ({ pieceId, ...position, groupId: sync.pieces.get(pieceId)?.groupId ?? `g${pieceId}` })) }) });
+    const engine = engineRef.current;
+    const piecesToSend = Array.from(changed.entries()).map(([pieceId, position]) => ({
+      pieceId,
+      ...position,
+      groupId: engine?.getGroupId(pieceId) ?? (sync.pieces.get(pieceId)?.groupId ?? `g${pieceId}`),
+    }));
+    try {
+      await api(`/api/rooms/${encodeURIComponent(roomId)}/pieces`, {
+        method: "POST",
+        body: JSON.stringify({ gameId: sync.game.gameId, pieces: piecesToSend }),
+      });
+    } catch (err) {
+      console.warn("Failed to persist committed pieces:", err);
+    }
   }
 
   function copyInviteLink(): void {

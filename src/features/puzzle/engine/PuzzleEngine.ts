@@ -178,6 +178,10 @@ export class PuzzleEngine {
     this.renderer.setViewport(viewport);
   }
 
+  getGroupId(pieceId: number): string | undefined {
+    return getGroupId(this.groups, pieceId);
+  }
+
   getZoom(): number {
     return this.renderer.getViewport().zoom;
   }

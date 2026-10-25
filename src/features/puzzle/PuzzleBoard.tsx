@@ -55,6 +55,9 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
   // Preserves user's current zoom and pan across any component re-render or piece sync
   const savedViewportRef = useRef<import("@/features/puzzle/rendering/types").Viewport | null>(null);
 
+  // Preserves piece positions across re-renders so pieces never scatter or revert
+  const savedPositionsRef = useRef<Map<number, PiecePosition> | null>(null);
+
   const updateZoomDisplay = useCallback(() => {
     if (engineRef.current) {
       const currentViewport = engineRef.current.getViewport();
@@ -86,17 +89,26 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
           setAnnouncement("Pazl muvaffaqiyatli yig'ildi!");
           props.onComplete?.();
         },
-        onCommitPositions: props.onCommitPositions,
+        onCommitPositions: (changed) => {
+          if (engineRef.current) {
+            savedPositionsRef.current = new Map(engineRef.current.getPositions());
+          }
+          props.onCommitPositions?.(changed);
+        },
         onDragStart: props.onDragStart,
         onDragMove: props.onDragMove,
       },
     );
     engineRef.current = engine;
     engine.resizeCanvas();
-    if (props.initialPositions && props.initialPositions.size > 0) {
+    if (savedPositionsRef.current && savedPositionsRef.current.size > 0) {
+      engine.setAllPositions(savedPositionsRef.current);
+    } else if (props.initialPositions && props.initialPositions.size > 0) {
       engine.setAllPositions(props.initialPositions);
+      savedPositionsRef.current = new Map(props.initialPositions);
     } else {
       engine.scatterPieces(props.seed, container.clientWidth, container.clientHeight);
+      savedPositionsRef.current = new Map(engine.getPositions());
     }
 
     // If user already had a zoom/pan viewport, restore it! Otherwise, fit to screen.
@@ -278,6 +290,9 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
       }
 
       const didSnap = engineRef.current?.onPointerUp(event.pointerId);
+      if (engineRef.current) {
+        savedPositionsRef.current = new Map(engineRef.current.getPositions());
+      }
       if (didSnap) setAnnouncement("Bo'lak joyiga tushdi.");
     },
     [],
@@ -316,6 +331,9 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLCanvasElement>) => {
     if (event.key === "r" || event.key === "R") {
       engineRef.current?.rotateSelection(90);
+      if (engineRef.current) {
+        savedPositionsRef.current = new Map(engineRef.current.getPositions());
+      }
       setAnnouncement("Bo'lak 90 daraja burildi.");
     }
   }, []);
@@ -350,6 +368,9 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
 
   const rotatePiece = useCallback(() => {
     engineRef.current?.rotateSelection(90);
+    if (engineRef.current) {
+      savedPositionsRef.current = new Map(engineRef.current.getPositions());
+    }
     setAnnouncement("Bo'lak 90 daraja burildi.");
   }, []);
 
