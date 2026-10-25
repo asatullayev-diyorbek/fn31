@@ -4,8 +4,16 @@ import { generatePuzzleGeometry, hashStringToSeed, mulberry32, scatterPiecesArou
 import type { DifficultyPreset, Game, PuzzleMode, Room, RoomParticipant, RoomVisibility } from "@/types/firestore";
 import { PUZZLE_PIECE_COUNT_MAX, PUZZLE_PIECE_COUNT_MIN } from "@/app/config";
 export interface CreateRoomOptions { ownerUid: string; ownerDisplayName: string; mode: PuzzleMode; imageId: string; imageWidthPx: number; imageHeightPx: number; pieceCount: number; visibility: RoomVisibility; snapEnabled: boolean; rotationEnabled: boolean; snapToleranceRatio: number; }
-export function validatePieceCount(pieceCount: number): void { if (!Number.isInteger(pieceCount) || pieceCount < PUZZLE_PIECE_COUNT_MIN || pieceCount > PUZZLE_PIECE_COUNT_MAX) throw new Error(`pieceCount must be an integer between ${PUZZLE_PIECE_COUNT_MIN} and ${PUZZLE_PIECE_COUNT_MAX}`); }
-export const DIFFICULTY_PRESETS: Record<"relaxed" | "standard" | "challenging", DifficultyPreset> = { relaxed: { label: "Yengil", pieceCount: 25, snapToleranceRatio: .4, rotationEnabled: false }, standard: { label: "Standart", pieceCount: 100, snapToleranceRatio: .3, rotationEnabled: false }, challenging: { label: "Qiyin", pieceCount: 300, snapToleranceRatio: .2, rotationEnabled: true } };
+export function validatePieceCount(pieceCount: number): void {
+  if (!Number.isInteger(pieceCount) || pieceCount < PUZZLE_PIECE_COUNT_MIN || pieceCount > PUZZLE_PIECE_COUNT_MAX) {
+    throw new Error(`pieceCount must be an integer between ${PUZZLE_PIECE_COUNT_MIN} and ${PUZZLE_PIECE_COUNT_MAX}`);
+  }
+}
+export const DIFFICULTY_PRESETS: Record<"relaxed" | "standard" | "challenging", DifficultyPreset> = {
+  relaxed: { label: "Yengil", pieceCount: 20, snapToleranceRatio: 0.4, rotationEnabled: false },
+  standard: { label: "Standart", pieceCount: 40, snapToleranceRatio: 0.3, rotationEnabled: false },
+  challenging: { label: "Qiyin", pieceCount: 100, snapToleranceRatio: 0.2, rotationEnabled: true },
+};
 export async function createRoom(options: CreateRoomOptions): Promise<{ roomId: string; gameId: string }> {
   validatePieceCount(options.pieceCount);
   const roomId = randomBytes(9), gameId = "game1", geometrySeed = `${roomId}:${gameId}:v1`;

@@ -349,13 +349,21 @@ export function CreatePuzzlePage(): JSX.Element {
               type="range"
               min={PUZZLE_PIECE_COUNT_MIN}
               max={PUZZLE_PIECE_COUNT_MAX}
+              step={5}
               value={pieceCount}
-              onChange={(e) => setPieceCount(Number(e.target.value))}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setPieceCount(val);
+                const matched = (Object.keys(DIFFICULTY_PRESETS) as Array<keyof typeof DIFFICULTY_PRESETS>).find(
+                  (k) => DIFFICULTY_PRESETS[k].pieceCount === val,
+                );
+                if (matched) setDifficulty(matched);
+              }}
               className={styles.slider}
             />
             <div className={styles.sliderBounds}>
-              <span>{PUZZLE_PIECE_COUNT_MIN}</span>
-              <span>{PUZZLE_PIECE_COUNT_MAX}</span>
+              <span>{PUZZLE_PIECE_COUNT_MIN} bo&apos;lak</span>
+              <span>Maksimal: {PUZZLE_PIECE_COUNT_MAX}</span>
             </div>
           </fieldset>
 

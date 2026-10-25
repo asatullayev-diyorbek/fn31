@@ -27,8 +27,8 @@ export function isFirebaseConfigured(): boolean {
   return Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
 }
 
-export const PUZZLE_PIECE_COUNT_MIN = 25;
-export const PUZZLE_PIECE_COUNT_MAX = 500;
+export const PUZZLE_PIECE_COUNT_MIN = 20;
+export const PUZZLE_PIECE_COUNT_MAX = 100;
 export const AUTH_TRANSACTION_TTL_MS = 5 * 60 * 1000;
 export const PIECE_LOCK_LEASE_MS = 15 * 1000;
 export const LIVE_DRAG_THROTTLE_MS = 50; // ~20 Hz ceiling, see docs/websocket-or-realtime.md
