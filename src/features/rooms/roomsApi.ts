@@ -1,7 +1,7 @@
 import { randomBytes } from "@/lib/validation/randomId";
 import { api } from "@/lib/api";
 import { generatePuzzleGeometry, hashStringToSeed, mulberry32 } from "@/features/puzzle/geometry";
-import type { DifficultyPreset, PuzzleMode, Room, RoomVisibility } from "@/types/firestore";
+import type { DifficultyPreset, Game, PuzzleMode, Room, RoomParticipant, RoomVisibility } from "@/types/firestore";
 import { PUZZLE_PIECE_COUNT_MAX, PUZZLE_PIECE_COUNT_MIN } from "@/app/config";
 export interface CreateRoomOptions { ownerUid: string; ownerDisplayName: string; mode: PuzzleMode; imageId: string; imageWidthPx: number; imageHeightPx: number; pieceCount: number; visibility: RoomVisibility; snapEnabled: boolean; rotationEnabled: boolean; snapToleranceRatio: number; }
 export function validatePieceCount(pieceCount: number): void { if (!Number.isInteger(pieceCount) || pieceCount < PUZZLE_PIECE_COUNT_MIN || pieceCount > PUZZLE_PIECE_COUNT_MAX) throw new Error(`pieceCount must be an integer between ${PUZZLE_PIECE_COUNT_MIN} and ${PUZZLE_PIECE_COUNT_MAX}`); }
@@ -10,6 +10,8 @@ export async function createRoom(options: CreateRoomOptions): Promise<{ roomId: 
 export async function joinRoom(roomId: string): Promise<Room> { const result = await api<{ room: Room }>(`/api/rooms/${encodeURIComponent(roomId)}/join`, { method: "POST" }); return result.room; }
 export async function completeRoom(roomId: string, gameId: string): Promise<void> { await api(`/api/rooms/${encodeURIComponent(roomId)}/complete`, { method: "POST", body: JSON.stringify({ gameId }) }); }
 export async function listMyOwnedRooms(): Promise<Room[]> { return (await api<{ rooms: Room[] }>("/api/rooms/mine")).rooms; }
+export interface RoomState { room: Room; game: Game | null; participants: RoomParticipant[]; }
+export async function getRoomState(roomId: string): Promise<RoomState> { return api<RoomState>(`/api/rooms/${encodeURIComponent(roomId)}`); }
 const key = "puzzletogether:recent-rooms";
 export function recordRecentRoomVisit(roomId: string): void { try { const values: string[] = JSON.parse(localStorage.getItem(key) || "[]"); localStorage.setItem(key, JSON.stringify([roomId, ...values.filter((x) => x !== roomId)].slice(0, 10))); } catch { /* optional convenience */ } }
 export function getRecentRoomIds(): string[] { try { return JSON.parse(localStorage.getItem(key) || "[]") as string[]; } catch { return []; } }

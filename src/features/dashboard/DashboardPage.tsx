@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { getRecentRoomIds, joinRoom, listMyOwnedRooms } from "@/features/rooms/roomsApi";
+import { getRecentRoomIds, getRoomState, joinRoom, listMyOwnedRooms } from "@/features/rooms/roomsApi";
+import { resolveRoomCategory, resolveRoomThumbnailUrl } from "@/features/images/roomThumbnail";
 import type { Room } from "@/types/firestore";
 import styles from "./DashboardPage.module.css";
 
@@ -71,15 +72,6 @@ const DEFAULT_RECENT_ROOMS: RecentRoomDisplayData[] = [
     dateText: "18.10.2026, 15:12",
     participants: 2,
   },
-];
-
-const THUMB_POOL = [
-  "/thumbnails/mountain.jpg",
-  "/thumbnails/dog.jpg",
-  "/thumbnails/city.jpg",
-  "/thumbnails/sunset.jpg",
-  "/thumbnails/car.jpg",
-  "/thumbnails/cat.jpg",
 ];
 
 function formatRoomDate(isoDateString?: string): string {
@@ -154,6 +146,7 @@ export function DashboardPage(): JSX.Element {
   const navigate = useNavigate();
   const [ownedRooms, setOwnedRooms] = useState<Room[]>([]);
   const [recentRoomIds] = useState<string[]>(() => getRecentRoomIds());
+  const [recentRoomStates, setRecentRoomStates] = useState<RecentRoomDisplayData[]>([]);
   const [joinCode, setJoinCode] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [copiedRoomId, setCopiedRoomId] = useState<string | null>(null);
@@ -166,6 +159,28 @@ export function DashboardPage(): JSX.Element {
         // Fallback gracefully on network error
       });
   }, [user]);
+
+  useEffect(() => {
+    if (!user || recentRoomIds.length === 0) return;
+    let active = true;
+    Promise.all(
+      recentRoomIds.slice(0, 3).map((roomId) =>
+        getRoomState(roomId)
+          .then(({ room, game, participants }): RecentRoomDisplayData => ({
+            roomId,
+            thumb: resolveRoomThumbnailUrl(game?.imageId),
+            dateText: formatRoomDate(room.updatedAt),
+            participants: participants.length,
+          }))
+          .catch((): RecentRoomDisplayData | null => null),
+      ),
+    ).then((results) => {
+      if (active) setRecentRoomStates(results.filter((r): r is RecentRoomDisplayData => r !== null));
+    });
+    return () => {
+      active = false;
+    };
+  }, [user, recentRoomIds]);
 
   async function handleJoin(event: React.FormEvent): Promise<void> {
     event.preventDefault();
@@ -204,23 +219,16 @@ export function DashboardPage(): JSX.Element {
       ? ownedRooms.map((room, index) => ({
           roomId: room.roomId,
           status: room.status === "open" ? "open" : "closed",
-          thumb: THUMB_POOL[index % THUMB_POOL.length] ?? "/thumbnails/mountain.jpg",
+          thumb: resolveRoomThumbnailUrl(room.imageId),
           pieceCount: room.pieceCount ?? (index === 0 ? 100 : index === 1 ? 200 : 50),
-          category: index % 3 === 0 ? "Tabiat" : index % 3 === 1 ? "Hayvonlar" : "Shahar",
+          category: resolveRoomCategory(room.imageId),
           participants: room.participantCount ?? (index === 0 ? 2 : index === 1 ? 1 : 3),
           dateText: formatRoomDate(room.createdAt),
         }))
       : DEFAULT_OWNED_ROOMS;
 
   const displayRecentRooms: RecentRoomDisplayData[] =
-    recentRoomIds.length > 0
-      ? recentRoomIds.slice(0, 3).map((roomId, index) => ({
-          roomId,
-          thumb: THUMB_POOL[(index + 3) % THUMB_POOL.length] ?? "/thumbnails/sunset.jpg",
-          dateText: index === 0 ? "Bugun, 13:26" : index === 1 ? "Kecha, 19:40" : "18.10.2026, 15:12",
-          participants: index === 0 ? 3 : 2,
-        }))
-      : DEFAULT_RECENT_ROOMS;
+    recentRoomStates.length > 0 ? recentRoomStates : recentRoomIds.length > 0 ? [] : DEFAULT_RECENT_ROOMS;
 
   // Calculate stats matching the exact mockup
   const totalRooms = ownedRooms.length > 0 ? ownedRooms.length : 3;
