@@ -39,7 +39,16 @@ app.use(express.json({ limit: "4mb" }));
 app.use("/media", express.static(uploadDirectory, { maxAge: "1y", immutable: true }));
 app.use("/gallery", express.static(galleryDirectory, { maxAge: "1d" }));
 app.get("/api/gallery", async (_req, res) => {
-  res.json({ images: await scanGalleryImages(galleryDirectory) });
+  const [images, usageResult] = await Promise.all([
+    scanGalleryImages(galleryDirectory),
+    pool.query<{ image_id: string; usage_count: string }>(
+      "select image_id, count(*) as usage_count from games where image_id like 'gallery:%' group by image_id",
+    ),
+  ]);
+  const usageByImageId = new Map(usageResult.rows.map((r) => [r.image_id, Number(r.usage_count)]));
+  res.json({
+    images: images.map((image) => ({ ...image, usageCount: usageByImageId.get(image.imageId) ?? 0 })),
+  });
 });
 
 io.use(async (socket, next) => {

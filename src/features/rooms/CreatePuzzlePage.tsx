@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { fetchGalleryImages, type GalleryImage } from "@/features/images/gallery";
+import { computeRecommendedImages, fetchGalleryImages, type GalleryImage } from "@/features/images/gallery";
 import { uploadPuzzleImage, validateImageFile } from "@/features/images/uploadImage";
 import { mediaUrl } from "@/lib/api";
 import { DIFFICULTY_PRESETS, createRoom, validatePieceCount } from "@/features/rooms/roomsApi";
@@ -85,7 +85,9 @@ export function CreatePuzzlePage(): JSX.Element {
   }, [galleryImages]);
 
   const visibleImages =
-    activeCategory === RECOMMENDED_TAB ? galleryImages : galleryImages.filter((img) => img.category === activeCategory);
+    activeCategory === RECOMMENDED_TAB
+      ? computeRecommendedImages(galleryImages)
+      : galleryImages.filter((img) => img.category === activeCategory);
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>): Promise<void> {
     const file = event.target.files?.[0];

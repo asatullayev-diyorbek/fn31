@@ -11,6 +11,10 @@ export interface GalleryImage {
   categorySlug: string;
   width: number;
   height: number;
+  /** File mtime, ISO string — when it was added to the gallery. */
+  createdAt: string;
+  /** How many rooms have ever been created with this image, server-computed. */
+  usageCount: number;
 }
 
 export function isGalleryImageId(imageId: string): boolean {
@@ -35,4 +39,29 @@ export function galleryLabelFromId(imageId: string): string {
 
 export async function fetchGalleryImages(): Promise<GalleryImage[]> {
   return (await api<{ images: GalleryImage[] }>("/api/gallery")).images;
+}
+
+/**
+ * The "Tavsiya etilgan" (Recommended) tab: the 5 most-used images (by how
+ * many rooms have ever been created with them) plus the 3 most recently
+ * added, deduplicated — a newest image that's already popular enough to be
+ * in the top 5 doesn't take a second slot. Ties in usage count fall back to
+ * recency so a freshly added, not-yet-used image doesn't clump at the
+ * bottom of a block of untouched images sorted arbitrarily.
+ */
+export function computeRecommendedImages(images: readonly GalleryImage[]): GalleryImage[] {
+  const byUsage = [...images].sort((a, b) => b.usageCount - a.usageCount || b.createdAt.localeCompare(a.createdAt));
+  const topUsed = byUsage.slice(0, 5);
+
+  const byRecency = [...images].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const seen = new Set(topUsed.map((img) => img.imageId));
+  const newest: GalleryImage[] = [];
+  for (const image of byRecency) {
+    if (newest.length >= 3) break;
+    if (seen.has(image.imageId)) continue;
+    seen.add(image.imageId);
+    newest.push(image);
+  }
+
+  return [...topUsed, ...newest];
 }

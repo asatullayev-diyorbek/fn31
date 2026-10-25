@@ -1,4 +1,4 @@
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
 export interface GalleryImage {
@@ -11,6 +11,8 @@ export interface GalleryImage {
   categorySlug: string;
   width: number;
   height: number;
+  /** The file's mtime, ISO string — "when was this added to the gallery", for sorting a "newest" shelf. */
+  createdAt: string;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -80,7 +82,8 @@ export async function scanGalleryImages(galleryDir: string): Promise<GalleryImag
       continue;
     }
     for (const fileName of files) {
-      const { width, height } = await readImageDimensions(path.join(categoryPath, fileName));
+      const filePath = path.join(categoryPath, fileName);
+      const [{ width, height }, fileStat] = await Promise.all([readImageDimensions(filePath), stat(filePath)]);
       images.push({
         imageId: `gallery:${categorySlug}/${fileName}`,
         label: slugToLabel(fileName),
@@ -88,6 +91,7 @@ export async function scanGalleryImages(galleryDir: string): Promise<GalleryImag
         categorySlug,
         width,
         height,
+        createdAt: fileStat.mtime.toISOString(),
       });
     }
   }
