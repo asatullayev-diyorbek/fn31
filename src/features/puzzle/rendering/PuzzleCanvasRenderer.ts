@@ -167,6 +167,16 @@ export class PuzzleCanvasRenderer {
     ctx.translate(this.viewport.panX, this.viewport.panY);
     ctx.scale(this.viewport.zoom, this.viewport.zoom);
 
+    // Target board mat & subtle outline indicating the puzzle assembly area
+    ctx.save();
+    ctx.fillStyle = "rgba(15, 23, 42, 0.45)";
+    ctx.fillRect(0, 0, this.imageWidthPx, this.imageHeightPx);
+    ctx.strokeStyle = "rgba(56, 189, 248, 0.28)";
+    ctx.lineWidth = 1.5 / this.viewport.zoom;
+    ctx.setLineDash([8 / this.viewport.zoom, 6 / this.viewport.zoom]);
+    ctx.strokeRect(0, 0, this.imageWidthPx, this.imageHeightPx);
+    ctx.restore();
+
     if (this.referenceOpacity > 0) {
       ctx.save();
       ctx.globalAlpha = this.referenceOpacity;
