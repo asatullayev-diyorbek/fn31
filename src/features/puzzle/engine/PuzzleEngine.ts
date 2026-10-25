@@ -6,6 +6,7 @@ import {
   checkClassicSnap,
   checkFreeNeighborSnap,
   computeClassicProgress,
+  computeFreeProgress,
   createInitialGroups,
   getGroupId,
   getGroupMembers,
@@ -374,12 +375,18 @@ export class PuzzleEngine {
   }
 
   private recomputeProgress(): void {
-    const progress = computeClassicProgress(this.positions, this.geometry.pieces, {
-      pieceWidth: this.pieceWidthPx,
-      pieceHeight: this.pieceHeightPx,
-      toleranceRatio: this.config.snapToleranceRatio,
-      rotationEnabled: this.config.rotationEnabled,
-    });
+    // Free mode pieces never need to reach their absolute classic-grid slot —
+    // only to be joined to every image-adjacent neighbor — so it has its own
+    // group-connectivity-based progress measure.
+    const progress =
+      this.config.mode === "classic"
+        ? computeClassicProgress(this.positions, this.geometry.pieces, {
+            pieceWidth: this.pieceWidthPx,
+            pieceHeight: this.pieceHeightPx,
+            toleranceRatio: this.config.snapToleranceRatio,
+            rotationEnabled: this.config.rotationEnabled,
+          })
+        : computeFreeProgress(this.groups, this.geometry.pieces);
     this.events.onProgressChange?.(progress);
     if (progress >= 1 && !this.complete) {
       this.complete = true;

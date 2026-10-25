@@ -1,5 +1,6 @@
 import type { EdgeSide, PieceGeometry } from "@/features/puzzle/geometry";
-import type { PiecePosition, PositionMap } from "./groupModel";
+import type { GroupMap, PiecePosition, PositionMap } from "./groupModel";
+import { areInSameGroup } from "./groupModel";
 
 export interface SnapConfig {
   pieceWidth: number;
@@ -91,7 +92,7 @@ export function checkFreeNeighborSnap(
   };
 }
 
-/** Progress = fraction of pieces whose position+rotation currently matches their correct classic slot. Mode-agnostic: used for completion detection in both modes since "complete" always means the full image is reconstructed. */
+/** Progress = fraction of pieces whose position+rotation currently matches their correct classic slot. Classic mode only — see computeFreeProgress for Free mode, which has no "correct" absolute position. */
 export function computeClassicProgress(
   positions: PositionMap,
   geometries: readonly PieceGeometry[],
@@ -103,6 +104,30 @@ export function computeClassicProgress(
     const position = positions.get(geometry.pieceId);
     if (!position) continue;
     if (checkClassicSnap(position, geometry, config).snapped) correct++;
+  }
+  return correct / geometries.length;
+}
+
+/**
+ * Free mode has no "correct" absolute canvas position (pieces start scattered
+ * at an arbitrary spot, not geometry's grid coordinates) — a piece is "done"
+ * once it's joined to every one of its image-adjacent neighbors, regardless of
+ * where on the canvas that joined cluster actually sits.
+ */
+export function computeFreeProgress(
+  groups: GroupMap,
+  geometries: readonly PieceGeometry[],
+): number {
+  if (geometries.length === 0) return 0;
+  let correct = 0;
+  for (const geometry of geometries) {
+    const neighborIds = Object.values(geometry.neighbors).filter(
+      (id): id is number => id !== undefined,
+    );
+    const allJoined = neighborIds.every((neighborId) =>
+      areInSameGroup(groups, geometry.pieceId, neighborId),
+    );
+    if (allJoined) correct++;
   }
   return correct / geometries.length;
 }

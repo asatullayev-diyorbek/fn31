@@ -8,7 +8,7 @@ export {
   rotateGroupAround,
 } from "./groupModel";
 export type { GroupMap, PiecePosition, PositionMap } from "./groupModel";
-export { checkClassicSnap, checkFreeNeighborSnap, computeClassicProgress } from "./snapping";
+export { checkClassicSnap, checkFreeNeighborSnap, computeClassicProgress, computeFreeProgress } from "./snapping";
 export type { SnapConfig, SnapResult } from "./snapping";
 export {
   angleDelta,
