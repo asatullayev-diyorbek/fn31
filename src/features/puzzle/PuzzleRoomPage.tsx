@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useRoomSync } from "@/features/puzzle/synchronization/useRoomSync";
+import { completeRoom } from "@/features/rooms/roomsApi";
 import { api, getSocket } from "@/lib/api";
 import { loadPuzzleImage } from "@/features/images/loadPuzzleImage";
 import { generatePuzzleGeometry, type GeometryResult } from "@/features/puzzle/geometry";
@@ -13,6 +14,7 @@ import styles from "./PuzzleRoomPage.module.css";
 export function PuzzleRoomPage(): JSX.Element {
   const { roomId = "" } = useParams<{ roomId: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const sync = useRoomSync(roomId);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [geometry, setGeometry] = useState<GeometryResult | null>(null);
@@ -20,6 +22,8 @@ export function PuzzleRoomPage(): JSX.Element {
   const [copied, setCopied] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const completionShownRef = useRef(false);
 
   const engineRef = useRef<PuzzleEngine | null>(null);
 
@@ -78,6 +82,26 @@ export function PuzzleRoomPage(): JSX.Element {
       engine.setPieceLockedByOther(pieceId, Boolean(piece.lockedBy) && piece.lockedBy !== sync.myUid);
     }
   }, [sync.pieces, sync.myUid]);
+
+  const completedAt = sync.game?.completedAt ?? null;
+
+  // Shows the completion banner for every participant (not just whoever placed the
+  // last piece) the moment the server confirms the game as done, once per page view.
+  useEffect(() => {
+    if (completedAt && !completionShownRef.current) {
+      completionShownRef.current = true;
+      setShowCompletionModal(true);
+    }
+  }, [completedAt]);
+
+  async function handlePuzzleComplete(): Promise<void> {
+    if (!sync.game) return;
+    try {
+      await completeRoom(roomId, sync.game.gameId);
+    } catch (err) {
+      console.warn("Failed to mark room complete:", err);
+    }
+  }
 
   async function handleDragStart(pieceIds: readonly number[]): Promise<void> {
     void pieceIds;
@@ -238,11 +262,40 @@ export function PuzzleRoomPage(): JSX.Element {
             engineRef.current = engine;
           }}
           onProgressChange={setProgress}
+          onComplete={handlePuzzleComplete}
           onDragStart={handleDragStart}
           onDragMove={handleDragMove}
           onCommitPositions={handleCommitPositions}
         />
       </main>
+
+      {showCompletionModal && (
+        <div className={styles.completionOverlay} role="dialog" aria-modal="true" aria-labelledby="completion-title">
+          <div className={styles.completionModal}>
+            <div className={styles.completionIcon} aria-hidden="true">🎉</div>
+            <h2 id="completion-title" className={styles.completionTitle}>Tabriklaymiz!</h2>
+            <p className={styles.completionSubtitle}>
+              Pazl {sync.participants.length > 1 ? `${sync.participants.length} kishi bilan birga` : ""} muvaffaqiyatli yig'ildi.
+            </p>
+            <div className={styles.completionActions}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => navigate("/create")}
+              >
+                Yangi pazl yaratish
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowCompletionModal(false)}
+              >
+                Yopish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

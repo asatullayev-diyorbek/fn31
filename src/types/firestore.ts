@@ -41,7 +41,7 @@ export interface AuthTransaction {
 
 export type PuzzleMode = "free" | "classic";
 export type RoomVisibility = "private" | "unlisted";
-export type RoomStatus = "open" | "closed";
+export type RoomStatus = "open" | "completed" | "closed";
 
 /** rooms/{roomId} */
 export interface Room {
