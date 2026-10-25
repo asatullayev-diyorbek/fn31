@@ -60,6 +60,10 @@
   line-height: 1.15;
 }
 
+:global([data-theme="light"]) .welcomeTitle {
+  color: var(--color-text);
+}
+
 .welcomeSubtitle {
   font-size: 15px;
   color: #94a3b8;
@@ -78,6 +82,11 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+:global([data-theme="light"]) .statsCard {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .statItem {
@@ -112,6 +121,10 @@
   font-weight: 700;
   color: #ffffff;
   line-height: 1.15;
+}
+
+:global([data-theme="light"]) .statValue {
+  color: var(--color-text);
 }
 
 .statLabel {
@@ -243,6 +256,11 @@
   min-height: 136px;
 }
 
+:global([data-theme="light"]) .joinCard {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .joinCardTop {
   display: flex;
   align-items: center;
@@ -262,6 +280,12 @@
   flex-shrink: 0;
 }
 
+:global([data-theme="light"]) .joinIconBox {
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  color: var(--color-text);
+}
+
 .joinTexts {
   display: flex;
   flex-direction: column;
@@ -274,6 +298,10 @@
   color: #ffffff;
   margin: 0;
   letter-spacing: -0.015em;
+}
+
+:global([data-theme="light"]) .joinTitle {
+  color: var(--color-text);
 }
 
 .joinSubtitle {
@@ -298,6 +326,11 @@
   border-radius: 14px;
   padding: 10px 14px;
   transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+:global([data-theme="light"]) .joinInputWrap {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.1);
 }
 
 .joinInputWrap:focus-within {
@@ -380,6 +413,10 @@
   letter-spacing: -0.02em;
 }
 
+:global([data-theme="light"]) .sectionTitle {
+  color: var(--color-text);
+}
+
 .sectionSubtitle {
   font-size: 13.5px;
   color: #8fa0b5;
@@ -399,6 +436,11 @@
   font-weight: 500;
   text-decoration: none;
   transition: all 0.2s ease;
+}
+
+:global([data-theme="light"]) .viewAllLink {
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.1);
 }
 
 .viewAllLink:hover {
@@ -430,6 +472,11 @@
   font-size: 14px;
 }
 
+:global([data-theme="light"]) .emptyState {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px dashed rgba(15, 23, 42, 0.14);
+}
+
 /* OWNED ROOM CARD */
 .roomCard {
   background: rgba(14, 22, 42, 0.72);
@@ -444,6 +491,11 @@
   gap: 16px;
   box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.08);
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+:global([data-theme="light"]) .roomCard {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .roomCard:hover {
@@ -468,6 +520,10 @@
   flex-shrink: 0;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+:global([data-theme="light"]) .thumbBox {
+  border: 1px solid rgba(15, 23, 42, 0.12);
 }
 
 .thumbImg {
@@ -517,6 +573,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: -0.01em;
+}
+
+:global([data-theme="light"]) .roomCode {
+  color: var(--color-text);
 }
 
 .statusChip {
@@ -637,6 +697,11 @@
   color: #cbd5e1;
 }
 
+:global([data-theme="light"]) .playClosed {
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+}
+
 .playClosed:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
@@ -655,6 +720,11 @@
   cursor: pointer;
   transition: all 0.18s ease;
   position: relative;
+}
+
+:global([data-theme="light"]) .iconActionBtn {
+  background: rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(15, 23, 42, 0.09);
 }
 
 .iconActionBtn:hover {
@@ -690,6 +760,11 @@
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
+:global([data-theme="light"]) .recentCard {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .recentCard:hover {
   transform: translateY(-2px);
   border-color: rgba(255, 255, 255, 0.18);
@@ -705,6 +780,10 @@
   flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+:global([data-theme="light"]) .recentThumbBox {
+  border: 1px solid rgba(15, 23, 42, 0.12);
 }
 
 .recentCenter {
@@ -723,6 +802,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+:global([data-theme="light"]) .recentCode {
+  color: var(--color-text);
 }
 
 .recentMetaLine {
@@ -777,6 +860,11 @@
   gap: 3px;
 }
 
+:global([data-theme="light"]) .dropdownMenu {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
 .dropdownItem {
   display: flex;
   align-items: center;
@@ -822,6 +910,10 @@
   padding: 24px;
 }
 
+:global([data-theme="light"]) .deleteModalOverlay {
+  background: rgba(255, 255, 255, 0.93);
+}
+
 .deleteModal {
   max-width: 440px;
   width: 100%;
@@ -833,6 +925,11 @@
   flex-direction: column;
   gap: 16px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+:global([data-theme="light"]) .deleteModal {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.12);
 }
 
 .deleteModalHeader {
@@ -861,6 +958,10 @@
   margin: 0;
 }
 
+:global([data-theme="light"]) .deleteModalTitle {
+  color: var(--color-text);
+}
+
 .deleteModalText {
   font-size: 14px;
   color: #94a3b8;
@@ -885,6 +986,12 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.18s ease;
+}
+
+:global([data-theme="light"]) .cancelModalBtn {
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: var(--color-text);
 }
 
 .cancelModalBtn:hover {

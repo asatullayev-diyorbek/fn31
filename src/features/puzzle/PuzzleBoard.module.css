@@ -295,6 +295,10 @@
   padding: 24px;
 }
 
+:global([data-theme="light"]) .modalOverlay {
+  background: rgba(255, 255, 255, 0.93);
+}
+
 .referenceModal {
   max-width: 820px;
   width: 100%;
@@ -308,6 +312,11 @@
   gap: 18px;
 }
 
+:global([data-theme="light"]) .referenceModal {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
 .modalHeader {
   display: flex;
   justify-content: space-between;
@@ -319,6 +328,10 @@
   font-weight: 700;
   color: #ffffff;
   margin: 0;
+}
+
+:global([data-theme="light"]) .modalTitle {
+  color: var(--color-text);
 }
 
 .modalCloseBtn {
@@ -335,6 +348,11 @@
   transition: all 0.18s ease;
 }
 
+:global([data-theme="light"]) .modalCloseBtn {
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+}
+
 .modalCloseBtn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
@@ -349,6 +367,11 @@
   align-items: center;
   justify-content: center;
   background: #080b14;
+}
+
+:global([data-theme="light"]) .referenceImgContainer {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.1);
 }
 
 .referenceImg {

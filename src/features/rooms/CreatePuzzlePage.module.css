@@ -63,6 +63,11 @@
   box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.08);
 }
 
+:global([data-theme="light"]) .card {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .cardTitle {
   font-size: 16px;
   font-weight: 650;
@@ -101,6 +106,11 @@
   background: rgba(255, 255, 255, 0.03);
   cursor: pointer;
   transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+:global([data-theme="light"]) .modeCard {
+  background: rgba(15, 23, 42, 0.03);
+  border: 1.5px solid rgba(15, 23, 42, 0.1);
 }
 
 .modeCard:hover {
@@ -149,6 +159,11 @@
   font-weight: 550;
   cursor: pointer;
   transition: all 0.18s ease;
+}
+
+:global([data-theme="light"]) .categoryTab {
+  background: rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(15, 23, 42, 0.1);
 }
 
 .categoryTab:hover {
@@ -219,6 +234,10 @@
   transition: border-color 0.18s ease, color 0.18s ease;
 }
 
+:global([data-theme="light"]) .uploadTile {
+  border: 1.5px dashed rgba(15, 23, 42, 0.22);
+}
+
 .uploadTile:hover {
   border-color: rgba(255, 255, 255, 0.4);
   color: var(--color-text);
@@ -266,6 +285,11 @@
   transition: border-color 0.18s ease, background 0.18s ease;
 }
 
+:global([data-theme="light"]) .difficultyCard {
+  background: rgba(15, 23, 42, 0.03);
+  border: 1.5px solid rgba(15, 23, 42, 0.1);
+}
+
 .difficultyCard strong {
   font-size: 14px;
   color: var(--color-text);
@@ -300,6 +324,10 @@
   border-radius: var(--radius-sm);
 }
 
+:global([data-theme="light"]) .sliderValue {
+  background: rgba(15, 23, 42, 0.06);
+}
+
 .slider {
   width: 100%;
   accent-color: #0071e3;
@@ -330,6 +358,11 @@
   background: rgba(255, 255, 255, 0.03);
   cursor: pointer;
   transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+:global([data-theme="light"]) .visibilityCard {
+  background: rgba(15, 23, 42, 0.03);
+  border: 1.5px solid rgba(15, 23, 42, 0.1);
 }
 
 .visibilityCard strong {
@@ -366,6 +399,11 @@
   padding: var(--space-4);
 }
 
+:global([data-theme="light"]) .previewCard {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .previewTitle {
   font-size: 15px;
   font-weight: 650;
@@ -381,6 +419,11 @@
   overflow: hidden;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+:global([data-theme="light"]) .previewImageBox {
+  background: rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .previewImage {
@@ -416,6 +459,12 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
+:global([data-theme="light"]) .gridBadge {
+  background: rgba(255, 255, 255, 0.93);
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  color: var(--color-text);
+}
+
 .previewPlaceholder {
   width: 100%;
   height: 100%;
@@ -433,6 +482,11 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   padding: var(--space-4);
+}
+
+:global([data-theme="light"]) .summaryCard {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .summaryTitle {

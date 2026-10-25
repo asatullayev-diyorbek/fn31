@@ -10,6 +10,10 @@
   box-sizing: border-box;
 }
 
+:global([data-theme="light"]) .page {
+  background: var(--color-bg);
+}
+
 /* 1. LEFT SIDEBAR (APPLE LIQUID DARK) */
 .sidebar {
   width: 290px;
@@ -27,6 +31,11 @@
   z-index: 20;
   height: 100%;
   box-sizing: border-box;
+}
+
+:global([data-theme="light"]) .sidebar {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.12);
 }
 
 .sidebarCollapsed {
@@ -60,6 +69,11 @@
   flex-shrink: 0;
 }
 
+:global([data-theme="light"]) .sidebarCollapseBtn {
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+}
+
 .sidebarCollapseBtn:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.25);
@@ -89,6 +103,12 @@
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+:global([data-theme="light"]) .sidebarExpandBtn {
+  background: rgba(255, 255, 255, 0.93);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: var(--color-text);
+}
+
 .sidebarExpandBtn:hover {
   background: #141b2b;
   border-color: #38bdf8;
@@ -115,6 +135,11 @@
   transition: all 0.18s ease;
 }
 
+:global([data-theme="light"]) .backNavBtn {
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .backNavBtn:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #f4f7fc;
@@ -132,6 +157,11 @@
   gap: 12px;
 }
 
+:global([data-theme="light"]) .roomProfileCard {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .roomCardTop {
   display: flex;
   gap: 12px;
@@ -147,6 +177,10 @@
   flex-shrink: 0;
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-theme="light"]) .roomThumbBox {
+  border: 1px solid rgba(15, 23, 42, 0.15);
 }
 
 .roomThumbImg {
@@ -184,6 +218,10 @@
   letter-spacing: -0.01em;
 }
 
+:global([data-theme="light"]) .roomTitle {
+  color: var(--color-text);
+}
+
 .statusChip {
   display: inline-flex;
   align-items: center;
@@ -217,10 +255,18 @@
   border-radius: 10px;
 }
 
+:global([data-theme="light"]) .roomCodeRow {
+  background: rgba(255, 255, 255, 0.78);
+}
+
 .roomCodeText {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
   color: #f4f7fc;
   font-weight: 600;
+}
+
+:global([data-theme="light"]) .roomCodeText {
+  color: var(--color-text);
 }
 
 .copyCodeBtn {
@@ -282,6 +328,12 @@
   flex-shrink: 0;
 }
 
+:global([data-theme="light"]) .shareIconBtn {
+  background: rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  color: var(--color-text);
+}
+
 .shareIconBtn:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.22);
@@ -296,6 +348,11 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+:global([data-theme="light"]) .metaChipsCard {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .metaChipsRow {
@@ -334,6 +391,11 @@
   transition: all 0.15s ease;
 }
 
+:global([data-theme="light"]) .settingsTriggerBtn {
+  background: rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+}
+
 .settingsTriggerBtn:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.1);
@@ -356,6 +418,11 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+:global([data-theme="light"]) .progressCard {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .progressHeader {
@@ -384,6 +451,10 @@
   border-radius: 999px;
   overflow: hidden;
   position: relative;
+}
+
+:global([data-theme="light"]) .progressBarTrack {
+  background: rgba(15, 23, 42, 0.08);
 }
 
 .progressBarFill {
@@ -420,6 +491,11 @@
   min-height: 120px;
 }
 
+:global([data-theme="light"]) .participantsSection {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .participantsHeader {
   display: flex;
   justify-content: space-between;
@@ -431,6 +507,10 @@
   font-weight: 700;
   color: #ffffff;
   margin: 0;
+}
+
+:global([data-theme="light"]) .participantsTitle {
+  color: var(--color-text);
 }
 
 .invitePillBtn {
@@ -469,6 +549,11 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   transition: background 0.15s ease;
+}
+
+:global([data-theme="light"]) .participantItem {
+  background: rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
 .participantItem:hover {
@@ -510,6 +595,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+:global([data-theme="light"]) .participantName {
+  color: var(--color-text);
 }
 
 .youBadge {
@@ -567,6 +656,12 @@
   width: 100%;
 }
 
+:global([data-theme="light"]) .sidebarActionBtn {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: var(--color-text);
+}
+
 .sidebarActionBtn:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.2);
@@ -608,6 +703,10 @@
   padding: 24px;
 }
 
+:global([data-theme="light"]) .settingsOverlay {
+  background: rgba(255, 255, 255, 0.93);
+}
+
 .settingsModal {
   max-width: 480px;
   width: 100%;
@@ -619,6 +718,11 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+:global([data-theme="light"]) .settingsModal {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.12);
 }
 
 .settingsHeader {
@@ -634,6 +738,10 @@
   margin: 0;
 }
 
+:global([data-theme="light"]) .settingsTitle {
+  color: var(--color-text);
+}
+
 .settingsCloseBtn {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -645,6 +753,11 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+:global([data-theme="light"]) .settingsCloseBtn {
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.1);
 }
 
 .settingsBody {
@@ -663,6 +776,10 @@
   font-size: 13.5px;
 }
 
+:global([data-theme="light"]) .settingRow {
+  background: rgba(255, 255, 255, 0.86);
+}
+
 .settingLabel {
   color: #9ba8c0;
 }
@@ -670,6 +787,10 @@
 .settingValue {
   color: #f4f7fc;
   font-weight: 600;
+}
+
+:global([data-theme="light"]) .settingValue {
+  color: var(--color-text);
 }
 
 /* 4. COMPLETION MODAL */
@@ -684,6 +805,10 @@
   justify-content: center;
   z-index: 999999;
   padding: 24px;
+}
+
+:global([data-theme="light"]) .completionOverlay {
+  background: rgba(255, 255, 255, 0.93);
 }
 
 .completionModal {
@@ -701,6 +826,11 @@
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
 }
 
+:global([data-theme="light"]) .completionModal {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
 .completionIcon {
   font-size: 52px;
 }
@@ -710,6 +840,10 @@
   font-weight: 800;
   color: #ffffff;
   margin: 0;
+}
+
+:global([data-theme="light"]) .completionTitle {
+  color: var(--color-text);
 }
 
 .completionSubtitle {

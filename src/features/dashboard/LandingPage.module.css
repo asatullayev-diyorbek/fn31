@@ -149,6 +149,10 @@
   margin-bottom: 24px;
 }
 
+:global([data-theme="light"]) .heroEyebrow {
+  background: rgba(255, 255, 255, 0.86);
+}
+
 .pulseDot {
   width: 8px;
   height: 8px;
@@ -170,6 +174,10 @@
   letter-spacing: 0.02em;
 }
 
+:global([data-theme="light"]) .eyebrowText {
+  color: var(--color-text);
+}
+
 .eyebrowTag {
   font-size: 11px;
   font-weight: 700;
@@ -187,6 +195,10 @@
   letter-spacing: -0.035em;
   color: #ffffff;
   margin: 0 0 20px;
+}
+
+:global([data-theme="light"]) .heroTitle {
+  color: var(--color-text);
 }
 
 .heroTitleGradient {
@@ -259,6 +271,12 @@
   transition: all 0.2s ease;
 }
 
+:global([data-theme="light"]) .secondaryCta {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  color: var(--color-text);
+}
+
 .secondaryCta:hover {
   background: rgba(30, 41, 59, 0.85);
   border-color: rgba(56, 189, 248, 0.4);
@@ -329,6 +347,10 @@
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+:global([data-theme="light"]) .visualCard {
+  background: rgba(255, 255, 255, 0.93);
+}
+
 .visualCard:hover {
   transform: rotateY(0deg) rotateX(0deg) translateY(-4px);
 }
@@ -340,6 +362,10 @@
   padding: 8px 12px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 12.5px;
+}
+
+:global([data-theme="light"]) .visualHeader {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .windowDots {
@@ -363,6 +389,10 @@
   gap: 8px;
   font-weight: 600;
   color: #e2e8f0;
+}
+
+:global([data-theme="light"]) .visualRoomTitle {
+  color: var(--color-text);
 }
 
 .titleLiveBadge {
@@ -397,6 +427,11 @@
   background: #090e1a;
 }
 
+:global([data-theme="light"]) .boardSimulation {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
 .boardBackgroundImg {
   width: 100%;
   height: 100%;
@@ -417,6 +452,11 @@
 .gridCell {
   border-right: 1px dashed rgba(255, 255, 255, 0.22);
   border-bottom: 1px dashed rgba(255, 255, 255, 0.22);
+}
+
+:global([data-theme="light"]) .gridCell {
+  border-right: 1px dashed rgba(15, 23, 42, 0.22);
+  border-bottom: 1px dashed rgba(15, 23, 42, 0.22);
 }
 
 .gridCell:nth-child(4n) {
@@ -506,6 +546,11 @@
   transform: translate(8px, -4px);
 }
 
+:global([data-theme="light"]) .cursorTag {
+  background: rgba(255, 255, 255, 0.93);
+  color: var(--color-text);
+}
+
 .cursorAvatar {
   font-size: 12px;
 }
@@ -527,6 +572,12 @@
   font-weight: 600;
   color: #f1f5f9;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+:global([data-theme="light"]) .pillOnlineUsers {
+  background: rgba(255, 255, 255, 0.93);
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  color: var(--color-text);
 }
 
 .avatarGroup {
@@ -606,12 +657,21 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
+:global([data-theme="light"]) .pillProgress {
+  background: rgba(255, 255, 255, 0.93);
+  border: 1px solid rgba(15, 23, 42, 0.16);
+}
+
 .progressBar {
   width: 48px;
   height: 6px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.12);
   overflow: hidden;
+}
+
+:global([data-theme="light"]) .progressBar {
+  background: rgba(15, 23, 42, 0.12);
 }
 
 .progressFill {
@@ -644,6 +704,11 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
+:global([data-theme="light"]) .statCard {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .statCard:hover {
   transform: translateY(-4px);
   border-color: rgba(56, 189, 248, 0.35);
@@ -666,6 +731,10 @@
   font-weight: 650;
   color: #f1f5f9;
   margin-bottom: 4px;
+}
+
+:global([data-theme="light"]) .statLabel {
+  color: var(--color-text);
 }
 
 .statSub {
@@ -712,6 +781,10 @@
   margin: 0 0 12px;
 }
 
+:global([data-theme="light"]) .sectionTitle {
+  color: var(--color-text);
+}
+
 .sectionSubtitle {
   font-size: 16px;
   line-height: 1.6;
@@ -740,6 +813,11 @@
   transition: all 0.25s ease;
   position: relative;
   overflow: hidden;
+}
+
+:global([data-theme="light"]) .stepCard {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .stepCard::before {
@@ -821,6 +899,11 @@
   overflow: hidden;
   transition: all 0.25s ease;
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+}
+
+:global([data-theme="light"]) .modeHighlightCard {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1.5px solid rgba(15, 23, 42, 0.1);
 }
 
 .modeHighlightCard:hover {
@@ -912,6 +995,11 @@
   transition: all 0.2s ease;
 }
 
+:global([data-theme="light"]) .galleryTab {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .galleryTab:hover {
   color: #f1f5f9;
   background: rgba(30, 41, 59, 0.8);
@@ -933,6 +1021,11 @@
   color: #e2e8f0;
 }
 
+:global([data-theme="light"]) .tabCount {
+  background: rgba(15, 23, 42, 0.12);
+  color: var(--color-text);
+}
+
 .galleryThumbStrip {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -947,6 +1040,10 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
   transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+:global([data-theme="light"]) .galleryThumbItem {
+  border: 1px solid rgba(15, 23, 42, 0.1);
 }
 
 .galleryThumbItem:hover {
@@ -966,6 +1063,10 @@
   justify-content: space-between;
   gap: 28px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-theme="light"]) .categoryShowcaseCard {
+  background: rgba(255, 255, 255, 0.86);
 }
 
 .catLeft {
@@ -992,6 +1093,10 @@
   font-weight: 700;
   color: #ffffff;
   margin: 0 0 8px;
+}
+
+:global([data-theme="light"]) .catTitle {
+  color: var(--color-text);
 }
 
 .catDesc {
