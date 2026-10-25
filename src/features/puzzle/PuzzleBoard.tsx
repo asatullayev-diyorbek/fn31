@@ -4,6 +4,7 @@ import { PuzzleEngine } from "@/features/puzzle/engine/PuzzleEngine";
 import type { PiecePosition } from "@/features/puzzle/interactions";
 import type { PuzzleMode } from "@/types/firestore";
 import { registerEngineForE2E } from "@/testHooks";
+import { useTheme } from "@/features/theme/ThemeProvider";
 import styles from "./PuzzleBoard.module.css";
 
 export interface PuzzleBoardProps {
@@ -31,6 +32,7 @@ export interface PuzzleBoardProps {
 const CURSOR_BROADCAST_THROTTLE_MS = 50; // ~20 Hz ceiling, same budget as piece live-drag (see src/app/config.ts)
 
 export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
+  const { theme, toggleTheme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<PuzzleEngine | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -88,6 +90,10 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
 
     setViewportRect({ left, top, width, height });
   }, [props.imageWidthPx, props.imageHeightPx]);
+
+  useEffect(() => {
+    engineRef.current?.markDirty();
+  }, [theme]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -553,6 +559,18 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
           >
             <span className={styles.toolIcon}>⛶</span>
             <span>To&apos;liq ekran</span>
+          </button>
+
+          {/* Mavzu almashtirish (Dark/Light mode) */}
+          <button
+            type="button"
+            className={styles.toolBtn}
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Kunduzgi rejim (Light mode)" : "Tungi rejim (Dark mode)"}
+            aria-label={theme === "dark" ? "Kunduzgi rejimga o'tish" : "Tungi rejimga o'tish"}
+          >
+            <span className={styles.toolIcon}>{theme === "dark" ? "☀️" : "🌙"}</span>
+            <span>{theme === "dark" ? "Kunduzgi" : "Tungi"}</span>
           </button>
         </div>
       </div>

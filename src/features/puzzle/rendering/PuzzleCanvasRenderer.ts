@@ -168,10 +168,11 @@ export class PuzzleCanvasRenderer {
     ctx.scale(this.viewport.zoom, this.viewport.zoom);
 
     // Target board mat & subtle outline indicating the puzzle assembly area
+    const isLight = typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "light";
     ctx.save();
-    ctx.fillStyle = "rgba(15, 23, 42, 0.45)";
+    ctx.fillStyle = isLight ? "rgba(255, 255, 255, 0.75)" : "rgba(15, 23, 42, 0.45)";
     ctx.fillRect(0, 0, this.imageWidthPx, this.imageHeightPx);
-    ctx.strokeStyle = "rgba(56, 189, 248, 0.28)";
+    ctx.strokeStyle = isLight ? "rgba(0, 113, 227, 0.45)" : "rgba(56, 189, 248, 0.28)";
     ctx.lineWidth = 1.5 / this.viewport.zoom;
     ctx.setLineDash([8 / this.viewport.zoom, 6 / this.viewport.zoom]);
     ctx.strokeRect(0, 0, this.imageWidthPx, this.imageHeightPx);

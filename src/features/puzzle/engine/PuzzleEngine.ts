@@ -183,6 +183,10 @@ export class PuzzleEngine {
     this.renderer.setReferenceOverlayOpacity(opacity);
   }
 
+  markDirty(): void {
+    this.renderer.markDirty();
+  }
+
   getGroupId(pieceId: number): string | undefined {
     return getGroupId(this.groups, pieceId);
   }
