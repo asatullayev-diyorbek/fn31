@@ -14,14 +14,6 @@ export function SiteHeader(): JSX.Element {
         <span>Puzzle<span className={styles.brandAccent}>Together</span></span>
       </Link>
       <nav className={styles.nav} aria-label="Asosiy navigatsiya">
-        <ul className={styles.navLinks}>
-          <li>
-            <a href="#how-it-works">Qanday ishlaydi</a>
-          </li>
-          <li>
-            <a href="#modes">Rejimlar</a>
-          </li>
-        </ul>
         {user ? (
           <div className={styles.userNavGroup}>
             <Link
