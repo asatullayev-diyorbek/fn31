@@ -271,27 +271,50 @@ export function PuzzleRoomPage(): JSX.Element {
 
   return (
     <div className={styles.page}>
-      {/* Sidebar Toggle Floating Button */}
-      <button
-        type="button"
-        className={styles.sidebarToggleBtn}
-        onClick={() => setIsSidebarOpen((prev) => !prev)}
-        title={isSidebarOpen ? "Yon panelni yashirish" : "Yon panelni ochish"}
-        aria-label="Yon panel holati"
-      >
-        {isSidebarOpen ? "◀" : "▶"}
-      </button>
+      {/* Floating Expand Button (shown when sidebar is closed) */}
+      {!isSidebarOpen && (
+        <button
+          type="button"
+          className={styles.sidebarExpandBtn}
+          onClick={() => setIsSidebarOpen(true)}
+          title="Yon panelni ochish"
+          aria-label="Yon panelni ochish"
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <line x1="9" y1="3" x2="9" y2="21" />
+            <polyline points="12 9 15 12 12 15" />
+          </svg>
+          <span>Menyu</span>
+        </button>
+      )}
 
       {/* 1. LEFT SIDEBAR */}
       <aside className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarCollapsed : ""}`}>
-        {/* Back button */}
-        <Link to="/dashboard" className={styles.backNavBtn}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12" />
-            <polyline points="12 19 5 12 12 5" />
-          </svg>
-          <span>Boshqaruv paneli</span>
-        </Link>
+        {/* Top row with Back button and Collapse button */}
+        <div className={styles.sidebarTopRow}>
+          <Link to="/dashboard" className={styles.backNavBtn}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            <span>Boshqaruv paneli</span>
+          </Link>
+
+          <button
+            type="button"
+            className={styles.sidebarCollapseBtn}
+            onClick={() => setIsSidebarOpen(false)}
+            title="Yon panelni yashirish"
+            aria-label="Yon panelni yashirish"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <line x1="9" y1="3" x2="9" y2="21" />
+              <polyline points="15 9 12 12 15 15" />
+            </svg>
+          </button>
+        </div>
 
         {/* Room Header Card */}
         <div className={styles.roomProfileCard}>
