@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "migrate:sqlite": "node dist/scripts/migrate-sqlite-to-postgres.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
@@ -13,6 +14,7 @@
     "express": "^5.3.0",
     "jose": "^6.2.13",
     "multer": "^2.4.0",
+    "pg": "^8.23.1",
     "socket.io": "^4.8.4",
     "zod": "^4.6.7"
   },
@@ -21,6 +23,7 @@
     "@types/express": "^5.0.6",
     "@types/multer": "^2.3.0",
     "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }

@@ -1,21 +1,38 @@
 # PuzzleTogether VPS API
 
 This is the self-hosted backend for `apipuzzle.asatullayev.uz`. It owns realtime
-WebSocket traffic, Telegram webhooks, a local SQLite database and uploaded puzzle
+WebSocket traffic, Telegram webhooks, a Postgres database and uploaded puzzle
 images; no Firebase, AWS, Docker or object storage provider is required.
 
 ## Local run
 
 ```bash
-cp .env.example .env
+cp .env.example .env   # set DATABASE_URL to a local Postgres database
 npm install
 npm run dev
 ```
 
+`bootstrapSchema()` (in `src/db.ts`) creates every table with `CREATE TABLE IF
+NOT EXISTS` on startup — a fresh database just needs to exist, no separate
+migration step for local dev.
+
 For production, run `npm run build && npm run start` under systemd, put Caddy or
 Nginx in front of port 8080, terminate TLS for `apipuzzle.asatullayev.uz`, and
 set `WEB_ORIGIN` to the Vercel production URL. Set a strong `JWT_SECRET`, then
-back up `/var/lib/puzzletogether` (both SQLite and `uploads/`).
+back up the Postgres database (e.g. `pg_dump`) and `uploads/`.
+
+### Migrating from the old SQLite setup
+
+This project ran on a local SQLite file (`node:sqlite`) before moving to
+Postgres. `src/scripts/migrate-sqlite-to-postgres.ts` copies every row across
+exactly once (every insert is `ON CONFLICT DO NOTHING`, so it's safe to re-run
+after a partial failure):
+
+```bash
+SQLITE_SOURCE_FILE=/path/to/puzzletogether.sqlite npm run migrate:sqlite
+```
+
+Back up the SQLite file first regardless — the script only ever reads it.
 
 ## Adding built-in gallery images
 
