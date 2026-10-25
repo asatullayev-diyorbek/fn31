@@ -365,6 +365,44 @@ app.post("/api/rooms", required, async (req, res) => {
   res.status(201).json({ roomId, gameId: game.gameId });
 });
 
+app.post("/api/rooms/:roomId/games", required, async (req, res) => {
+  const parsed = z.object({ game: gameSchema, pieces: z.array(pieceSchema) }).safeParse(req.body);
+  if (!parsed.success) return fail(res, 400, "invalid room payload");
+  const roomId = String(req.params.roomId);
+  const user = res.locals.user as User;
+  const { game, pieces } = parsed.data;
+
+  const roomResult = await pool.query("select owner_id as \"ownerUid\" from rooms where id=$1", [roomId]);
+  const room = roomResult.rows[0] as { ownerUid: string } | undefined;
+  if (!room) return fail(res, 404, "Xona topilmadi.");
+  if (room.ownerUid !== user.uid) return fail(res, 403, "Faqat xona egasi yangi pazl boshlashi mumkin.");
+
+  const stamp = now();
+  await withTransaction(async (client) => {
+    await client.query(
+      "insert into games values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)",
+      [
+        game.gameId, roomId, game.mode, game.imageId, game.pieceCount, game.columns, game.rows,
+        game.geometrySeed, game.geometryVersion, Number(game.snapEnabled), Number(game.rotationEnabled),
+        game.snapToleranceRatio, 0, 0, stamp, stamp, null,
+      ],
+    );
+    const chunks = new Map<string, Piece[]>();
+    for (const piece of pieces) {
+      const chunkId = `c${Math.floor(piece.pieceId / 50)}`;
+      chunks.set(chunkId, [...(chunks.get(chunkId) ?? []), piece]);
+    }
+    for (const [chunkId, chunk] of chunks) {
+      const payload = JSON.stringify(Object.fromEntries(chunk.map((piece) => [piece.pieceId, piece])));
+      await client.query("insert into pieces values ($1,$2,$3,$4)", [roomId, game.gameId, chunkId, payload]);
+    }
+    await client.query("update rooms set status='open', current_game_id=$1, updated_at=$2 where id=$3", [game.gameId, stamp, roomId]);
+  });
+
+  io.to(`room:${roomId}`).emit("room:changed");
+  res.status(201).json({ roomId, gameId: game.gameId });
+});
+
 app.get("/api/rooms/mine", required, async (_req, res) => {
   const user = res.locals.user as User;
   const result = await pool.query(

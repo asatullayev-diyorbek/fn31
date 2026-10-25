@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { computeRecommendedImages, fetchGalleryImages, type GalleryImage } from "@/features/images/gallery";
 import { uploadPuzzleImage, validateImageFile } from "@/features/images/uploadImage";
 import { mediaUrl } from "@/lib/api";
-import { DIFFICULTY_PRESETS, createRoom, validatePieceCount } from "@/features/rooms/roomsApi";
+import { DIFFICULTY_PRESETS, createNextGame, createRoom, validatePieceCount } from "@/features/rooms/roomsApi";
 import { PUZZLE_PIECE_COUNT_MAX, PUZZLE_PIECE_COUNT_MIN } from "@/app/config";
 import type { PuzzleMode, RoomVisibility } from "@/types/firestore";
 import { computeGridLayout } from "@/features/puzzle/geometry";
@@ -94,6 +94,7 @@ function PuzzleGridOverlay({ cols, rows }: PuzzleGridOverlayProps): JSX.Element 
 export function CreatePuzzlePage(): JSX.Element {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { roomId: nextForRoomId } = useParams<{ roomId?: string }>();
 
   const [mode, setMode] = useState<PuzzleMode>("classic");
   const [difficulty, setDifficulty] = useState<keyof typeof DIFFICULTY_PRESETS>("standard");
@@ -201,6 +202,20 @@ export function CreatePuzzlePage(): JSX.Element {
     setSubmitting(true);
     try {
       const preset = DIFFICULTY_PRESETS[difficulty];
+      if (nextForRoomId) {
+        await createNextGame(nextForRoomId, {
+          mode,
+          imageId: imageSource.imageId,
+          imageWidthPx: imageSource.width,
+          imageHeightPx: imageSource.height,
+          pieceCount,
+          snapEnabled: true,
+          rotationEnabled: preset.rotationEnabled,
+          snapToleranceRatio: preset.snapToleranceRatio,
+        });
+        navigate(`/room/${nextForRoomId}`);
+        return;
+      }
       const { roomId } = await createRoom({
         ownerUid: user.uid,
         ownerDisplayName: user.displayName ?? "O'yinchi",
@@ -244,7 +259,7 @@ export function CreatePuzzlePage(): JSX.Element {
       <div className={styles.header}>
         <div className={styles.headerIcon} aria-hidden="true">🧩</div>
         <div>
-          <h1 className={styles.headerTitle}>Yangi pazl yaratish</h1>
+          <h1 className={styles.headerTitle}>{nextForRoomId ? "Keyingi pazl" : "Yangi pazl yaratish"}</h1>
           <p className={styles.headerSubtitle}>O&apos;zingizga yoqqan rasm bilan yangi hamkorlik pazlini yarating.</p>
         </div>
       </div>
@@ -368,22 +383,24 @@ export function CreatePuzzlePage(): JSX.Element {
           </fieldset>
 
           {/* 4. Visibility */}
-          <fieldset className={styles.card}>
-            <legend className={styles.cardTitle}>4. Xona ko&apos;rinishi</legend>
-            <p className={styles.cardSubtitle}>Xona qanday ishtirokchilar uchun ochiq bo&apos;lishini tanlang</p>
-            <div className={styles.visibilityGrid}>
-              <label className={`${styles.visibilityCard} ${visibility === "unlisted" ? styles.visibilityCardActive : ""}`}>
-                <input type="radio" name="visibility" checked={visibility === "unlisted"} onChange={() => setVisibility("unlisted")} className={styles.visuallyHiddenInput} />
-                <strong>🔗 Havola bilan</strong>
-                <span>Havolaga ega har kim qo&apos;shilishi mumkin</span>
-              </label>
-              <label className={`${styles.visibilityCard} ${visibility === "private" ? styles.visibilityCardActive : ""}`}>
-                <input type="radio" name="visibility" checked={visibility === "private"} onChange={() => setVisibility("private")} className={styles.visuallyHiddenInput} />
-                <strong>🔒 Xususiy</strong>
-                <span>Faqat taklif qilingan ishtirokchilar</span>
-              </label>
-            </div>
-          </fieldset>
+          {!nextForRoomId && (
+            <fieldset className={styles.card}>
+              <legend className={styles.cardTitle}>4. Xona ko&apos;rinishi</legend>
+              <p className={styles.cardSubtitle}>Xona qanday ishtirokchilar uchun ochiq bo&apos;lishini tanlang</p>
+              <div className={styles.visibilityGrid}>
+                <label className={`${styles.visibilityCard} ${visibility === "unlisted" ? styles.visibilityCardActive : ""}`}>
+                  <input type="radio" name="visibility" checked={visibility === "unlisted"} onChange={() => setVisibility("unlisted")} className={styles.visuallyHiddenInput} />
+                  <strong>🔗 Havola bilan</strong>
+                  <span>Havolaga ega har kim qo&apos;shilishi mumkin</span>
+                </label>
+                <label className={`${styles.visibilityCard} ${visibility === "private" ? styles.visibilityCardActive : ""}`}>
+                  <input type="radio" name="visibility" checked={visibility === "private"} onChange={() => setVisibility("private")} className={styles.visuallyHiddenInput} />
+                  <strong>🔒 Xususiy</strong>
+                  <span>Faqat taklif qilingan ishtirokchilar</span>
+                </label>
+              </div>
+            </fieldset>
+          )}
         </div>
 
         {/* RIGHT: live preview */}
@@ -424,10 +441,12 @@ export function CreatePuzzlePage(): JSX.Element {
                 <dt>Qiyinchilik</dt>
                 <dd>{difficultyLabel}</dd>
               </div>
-              <div className={styles.summaryRow}>
-                <dt>Xona ko&apos;rinishi</dt>
-                <dd>{visibility === "unlisted" ? "Havola bilan" : "Xususiy"}</dd>
-              </div>
+              {!nextForRoomId && (
+                <div className={styles.summaryRow}>
+                  <dt>Xona ko&apos;rinishi</dt>
+                  <dd>{visibility === "unlisted" ? "Havola bilan" : "Xususiy"}</dd>
+                </div>
+              )}
               <div className={styles.summaryRow}>
                 <dt>Rasm manbai</dt>
                 <dd>{previewLabel}</dd>
@@ -444,7 +463,11 @@ export function CreatePuzzlePage(): JSX.Element {
           Bekor qilish
         </button>
         <button type="submit" className="btn btn-primary" disabled={submitting || uploading || !imageSource}>
-          {submitting ? "Yaratilmoqda…" : "+ Xonani yaratish"}
+          {submitting
+            ? "Yaratilmoqda…"
+            : nextForRoomId
+              ? "Keyingi pazlni boshlash"
+              : "+ Xonani yaratish"}
         </button>
       </div>
     </form>

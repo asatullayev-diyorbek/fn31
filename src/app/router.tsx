@@ -32,6 +32,14 @@ export function AppRouter(): JSX.Element {
         }
       />
       <Route
+        path="/room/:roomId/next"
+        element={
+          <RequireAuth>
+            <CreatePuzzlePage />
+          </RequireAuth>
+        }
+      />
+      <Route
         path="/room/:roomId"
         element={
           <RequireAuth>

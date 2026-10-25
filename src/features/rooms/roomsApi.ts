@@ -4,6 +4,7 @@ import { generatePuzzleGeometry, hashStringToSeed, mulberry32, scatterPiecesArou
 import type { DifficultyPreset, Game, PuzzleMode, Room, RoomParticipant, RoomVisibility } from "@/types/firestore";
 import { PUZZLE_PIECE_COUNT_MAX, PUZZLE_PIECE_COUNT_MIN } from "@/app/config";
 export interface CreateRoomOptions { ownerUid: string; ownerDisplayName: string; mode: PuzzleMode; imageId: string; imageWidthPx: number; imageHeightPx: number; pieceCount: number; visibility: RoomVisibility; snapEnabled: boolean; rotationEnabled: boolean; snapToleranceRatio: number; }
+export interface CreateNextGameOptions { mode: PuzzleMode; imageId: string; imageWidthPx: number; imageHeightPx: number; pieceCount: number; snapEnabled: boolean; rotationEnabled: boolean; snapToleranceRatio: number; }
 export function validatePieceCount(pieceCount: number): void {
   if (!Number.isInteger(pieceCount) || pieceCount < PUZZLE_PIECE_COUNT_MIN || pieceCount > PUZZLE_PIECE_COUNT_MAX) {
     throw new Error(`pieceCount must be an integer between ${PUZZLE_PIECE_COUNT_MIN} and ${PUZZLE_PIECE_COUNT_MAX}`);
@@ -32,6 +33,25 @@ export async function createRoom(options: CreateRoomOptions): Promise<{ roomId: 
     return { pieceId, x: position?.x ?? 0, y: position?.y ?? 0, rotation: 0 as const, groupId: `g${pieceId}`, lockedBy: null, lockExpiresAt: null };
   });
   return api("/api/rooms", { method: "POST", body: JSON.stringify({ roomId, visibility: options.visibility, pieces, game: { gameId, mode: options.mode, imageId: options.imageId, pieceCount: geometry.pieces.length, columns: geometry.cols, rows: geometry.rows, geometrySeed, geometryVersion: 1, snapEnabled: options.snapEnabled, rotationEnabled: options.rotationEnabled, snapToleranceRatio: options.snapToleranceRatio } }) });
+}
+export async function createNextGame(roomId: string, options: CreateNextGameOptions): Promise<{ roomId: string; gameId: string }> {
+  validatePieceCount(options.pieceCount);
+  const gameId = `game_${randomBytes(9)}`, geometrySeed = `${roomId}:${gameId}:v1`;
+  const geometry = generatePuzzleGeometry({ seed: geometrySeed, geometryVersion: 1, pieceCount: options.pieceCount, imageAspectRatio: options.imageWidthPx / options.imageHeightPx });
+  const rng = mulberry32(hashStringToSeed(`${geometrySeed}:initial-scatter`));
+  const scattered = scatterPiecesAroundFrame({
+    pieceIds: geometry.pieces.map((p) => p.pieceId),
+    pieceWidthPx: options.imageWidthPx / geometry.cols,
+    pieceHeightPx: options.imageHeightPx / geometry.rows,
+    imageWidthPx: options.imageWidthPx,
+    imageHeightPx: options.imageHeightPx,
+    rng,
+  });
+  const pieces = geometry.pieces.map(({ pieceId }) => {
+    const position = scattered.get(pieceId);
+    return { pieceId, x: position?.x ?? 0, y: position?.y ?? 0, rotation: 0 as const, groupId: `g${pieceId}`, lockedBy: null, lockExpiresAt: null };
+  });
+  return api(`/api/rooms/${encodeURIComponent(roomId)}/games`, { method: "POST", body: JSON.stringify({ pieces, game: { gameId, mode: options.mode, imageId: options.imageId, pieceCount: geometry.pieces.length, columns: geometry.cols, rows: geometry.rows, geometrySeed, geometryVersion: 1, snapEnabled: options.snapEnabled, rotationEnabled: options.rotationEnabled, snapToleranceRatio: options.snapToleranceRatio } }) });
 }
 export async function joinRoom(roomId: string): Promise<Room> { const result = await api<{ room: Room }>(`/api/rooms/${encodeURIComponent(roomId)}/join`, { method: "POST" }); return result.room; }
 export async function completeRoom(roomId: string, gameId: string): Promise<void> { await api(`/api/rooms/${encodeURIComponent(roomId)}/complete`, { method: "POST", body: JSON.stringify({ gameId }) }); }

@@ -206,13 +206,23 @@ export function PuzzleRoomPage(): JSX.Element {
   }, [sync.pieces, sync.myUid]);
 
   const completedAt = sync.game?.completedAt ?? null;
+  const shownForGameIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (gameId && shownForGameIdRef.current !== gameId) {
+      shownForGameIdRef.current = null;
+      completionShownRef.current = false;
+      setShowCompletionModal(false);
+    }
+  }, [gameId]);
 
   useEffect(() => {
     if (completedAt && !completionShownRef.current) {
       completionShownRef.current = true;
+      shownForGameIdRef.current = gameId ?? null;
       setShowCompletionModal(true);
     }
-  }, [completedAt]);
+  }, [completedAt, gameId]);
 
   async function handlePuzzleComplete(): Promise<void> {
     if (!sync.game) return;
@@ -732,13 +742,17 @@ export function PuzzleRoomPage(): JSX.Element {
               Pazl {sync.participants.length > 1 ? `${sync.participants.length} kishi bilan birga` : ""} muvaffaqiyatli yig&apos;ildi.
             </p>
             <div className={styles.completionActions}>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => navigate("/create")}
-              >
-                Yangi pazl yaratish
-              </button>
+              {isOwner ? (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => navigate(`/room/${roomId}/next`)}
+                >
+                  Keyingi pazl (shu xonada)
+                </button>
+              ) : (
+                <p className={styles.completionSubtitle}>Xona egasi keyingi pazlni tanlashini kuting…</p>
+              )}
               <button
                 type="button"
                 className="btn btn-secondary"
