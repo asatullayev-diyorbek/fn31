@@ -23,57 +23,6 @@ interface RecentRoomDisplayData {
   participants: number;
 }
 
-const DEFAULT_OWNED_ROOMS: RoomDisplayData[] = [
-  {
-    roomId: "h8jfpnrmi",
-    status: "open",
-    thumb: "/thumbnails/mountain.jpg",
-    pieceCount: 100,
-    category: "Tabiat",
-    participants: 2,
-    dateText: "Bugun, 13:26",
-  },
-  {
-    roomId: "v5ddrix0c",
-    status: "closed",
-    thumb: "/thumbnails/dog.jpg",
-    pieceCount: 200,
-    category: "Hayvonlar",
-    participants: 1,
-    dateText: "Kecha, 20:14",
-  },
-  {
-    roomId: "nwjw8myt2",
-    status: "open",
-    thumb: "/thumbnails/city.jpg",
-    pieceCount: 50,
-    category: "Shahar",
-    participants: 3,
-    dateText: "20.10.2026, 18:45",
-  },
-];
-
-const DEFAULT_RECENT_ROOMS: RecentRoomDisplayData[] = [
-  {
-    roomId: "nwjw8myt2",
-    thumb: "/thumbnails/sunset.jpg",
-    dateText: "Bugun, 13:26",
-    participants: 3,
-  },
-  {
-    roomId: "sm96r3l0g",
-    thumb: "/thumbnails/car.jpg",
-    dateText: "Kecha, 19:40",
-    participants: 2,
-  },
-  {
-    roomId: "h8jfpnrmi",
-    thumb: "/thumbnails/cat.jpg",
-    dateText: "18.10.2026, 15:12",
-    participants: 2,
-  },
-];
-
 function formatRoomDate(isoDateString?: string): string {
   if (!isoDateString) return "Bugun, 13:26";
   const date = new Date(isoDateString);
@@ -145,6 +94,7 @@ export function DashboardPage(): JSX.Element {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [ownedRooms, setOwnedRooms] = useState<Room[]>([]);
+  const [ownedRoomsLoading, setOwnedRoomsLoading] = useState(true);
   const [recentRoomIds] = useState<string[]>(() => getRecentRoomIds());
   const [recentRoomStates, setRecentRoomStates] = useState<RecentRoomDisplayData[]>([]);
   const [joinCode, setJoinCode] = useState("");
@@ -175,7 +125,8 @@ export function DashboardPage(): JSX.Element {
       .then(setOwnedRooms)
       .catch(() => {
         // Fallback gracefully on network error
-      });
+      })
+      .finally(() => setOwnedRoomsLoading(false));
   }, [user]);
 
   useEffect(() => {
@@ -231,26 +182,21 @@ export function DashboardPage(): JSX.Element {
     }
   }
 
-  // Build display rooms: if user has real rooms, use them; otherwise show default showcase
-  const displayOwnedRooms: RoomDisplayData[] =
-    ownedRooms.length > 0
-      ? ownedRooms.map((room, index) => ({
-          roomId: room.roomId,
-          status: room.status === "open" ? "open" : "closed",
-          thumb: resolveRoomThumbnailUrl(room.imageId),
-          pieceCount: room.pieceCount ?? (index === 0 ? 100 : index === 1 ? 200 : 50),
-          category: resolveRoomCategory(room.imageId),
-          participants: room.participantCount ?? (index === 0 ? 2 : index === 1 ? 1 : 3),
-          dateText: formatRoomDate(room.createdAt),
-        }))
-      : DEFAULT_OWNED_ROOMS;
+  // Build display rooms directly from the user's real rooms — no mock/placeholder fallback.
+  const displayOwnedRooms: RoomDisplayData[] = ownedRooms.map((room) => ({
+    roomId: room.roomId,
+    status: room.status,
+    thumb: resolveRoomThumbnailUrl(room.imageId),
+    pieceCount: room.pieceCount ?? 0,
+    category: resolveRoomCategory(room.imageId),
+    participants: room.participantCount ?? 1,
+    dateText: formatRoomDate(room.createdAt),
+  }));
 
-  const displayRecentRooms: RecentRoomDisplayData[] =
-    recentRoomStates.length > 0 ? recentRoomStates : recentRoomIds.length > 0 ? [] : DEFAULT_RECENT_ROOMS;
+  const displayRecentRooms: RecentRoomDisplayData[] = recentRoomStates;
 
-  // Calculate stats matching the exact mockup
-  const totalRooms = ownedRooms.length > 0 ? ownedRooms.length : 3;
-  const activeRooms = ownedRooms.length > 0 ? ownedRooms.filter((r) => r.status === "open").length : 1;
+  const totalRooms = ownedRooms.length;
+  const activeRooms = ownedRooms.filter((r) => r.status === "open").length;
   const pendingInvites = 0;
 
   return (
@@ -387,6 +333,18 @@ export function DashboardPage(): JSX.Element {
           </Link>
         </div>
 
+        {ownedRoomsLoading ? (
+          <div className={styles.emptyState}>
+            <p role="status">Xonalar yuklanmoqda…</p>
+          </div>
+        ) : displayOwnedRooms.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p>Hali birorta pazl xonasi yaratmagansiz.</p>
+            <Link to="/create" className="btn btn-primary">
+              Birinchi pazlni yarating
+            </Link>
+          </div>
+        ) : (
         <div className={styles.roomsGrid}>
           {displayOwnedRooms.map((room) => (
             <div key={room.roomId} className={styles.roomCard}>
@@ -554,6 +512,7 @@ export function DashboardPage(): JSX.Element {
             </div>
           ))}
         </div>
+        )}
       </section>
 
       {/* 4. SO'NGGI XONALAR */}
@@ -572,6 +531,11 @@ export function DashboardPage(): JSX.Element {
           </Link>
         </div>
 
+        {displayRecentRooms.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p>Hali hech qanday xonaga tashrif buyurmagansiz.</p>
+          </div>
+        ) : (
         <div className={styles.roomsGrid}>
           {displayRecentRooms.map((recent) => (
             <div key={recent.roomId} className={styles.recentCard}>
@@ -612,6 +576,7 @@ export function DashboardPage(): JSX.Element {
             </div>
           ))}
         </div>
+        )}
       </section>
 
       {/* Delete Confirmation Modal */}
