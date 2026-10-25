@@ -205,8 +205,16 @@ export function AdminPage(): JSX.Element {
                     <td className={styles.mono}>{room.roomId}</td>
                     <td>{room.ownerDisplayName ?? "—"}</td>
                     <td>
-                      <span className={`${styles.badge} ${room.status === "open" ? styles.badgeOpen : styles.badgeCompleted}`}>
-                        {room.status === "open" ? "Faol" : "Yakunlangan"}
+                      <span
+                        className={`${styles.badge} ${
+                          room.status === "open"
+                            ? styles.badgeOpen
+                            : room.status === "archived"
+                              ? styles.badgeArchived
+                              : styles.badgeCompleted
+                        }`}
+                      >
+                        {room.status === "open" ? "Faol" : room.status === "archived" ? "Arxivlangan" : "Yakunlangan"}
                       </span>
                     </td>
                     <td>{room.pieceCount ?? "—"}</td>
@@ -229,7 +237,7 @@ export function AdminPage(): JSX.Element {
                         onClick={() => void handleDeleteRoom(room.roomId)}
                         disabled={deletingRoomId === room.roomId}
                       >
-                        {deletingRoomId === room.roomId ? "…" : "O'chirish"}
+                        {deletingRoomId === room.roomId ? "…" : "Butunlay o'chirish"}
                       </button>
                     </td>
                   </tr>

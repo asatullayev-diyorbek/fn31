@@ -120,6 +120,8 @@ async function state(roomId: string): Promise<unknown | null> {
   const room = roomResult.rows[0] as Record<string, unknown> | undefined;
   if (!room) return null;
 
+  if (room.status === "archived") return null;
+
   const gameResult = await pool.query("select * from games where room_id=$1 and id=$2", [roomId, String(room.current_game_id)]);
   const game = gameResult.rows[0] as Record<string, unknown> | undefined;
 
@@ -421,7 +423,7 @@ app.get("/api/rooms/mine", required, async (_req, res) => {
             (select count(*) from participants p where p.room_id = r.id) as "participantCount"
      from rooms r
      left join games g on g.room_id = r.id and g.id = r.current_game_id
-     where r.owner_id = $1
+     where r.owner_id = $1 and r.status != 'archived'
      order by r.created_at desc`,
     [user.uid],
   );
@@ -508,17 +510,15 @@ app.post("/api/rooms/:roomId/complete", required, async (req, res) => {
 app.delete("/api/rooms/:roomId", required, async (req, res) => {
   const user = res.locals.user as User;
   const roomId = String(req.params.roomId);
-  const roomResult = await pool.query("select owner_id as \"ownerUid\" from rooms where id=$1", [roomId]);
-  const room = roomResult.rows[0] as { ownerUid: string } | undefined;
-  if (!room) return fail(res, 404, "Xona topilmadi.");
+  const roomResult = await pool.query("select owner_id as \"ownerUid\", status from rooms where id=$1", [roomId]);
+  const room = roomResult.rows[0] as { ownerUid: string; status: string } | undefined;
+  if (!room || room.status === "archived") return fail(res, 404, "Xona topilmadi.");
   if (room.ownerUid !== user.uid) return fail(res, 403, "Faqat xona egasi xonani o'chira oladi.");
 
-  await withTransaction(async (client) => {
-    await client.query("delete from pieces where room_id=$1", [roomId]);
-    await client.query("delete from games where room_id=$1", [roomId]);
-    await client.query("delete from participants where room_id=$1", [roomId]);
-    await client.query("delete from rooms where id=$1", [roomId]);
-  });
+  // "O'chirish" foydalanuvchi uchun arxivlashdir: haqiqiy qatorlar (games/pieces/participants)
+  // saqlanib qoladi — admin panelda tarix sifatida ko'rinadi — faqat status o'zgaradi, shuning
+  // uchun /api/rooms/mine va state() (GET/join) uni endi qaytarmaydi.
+  await pool.query("update rooms set status='archived', updated_at=$1 where id=$2", [now(), roomId]);
 
   io.to(`room:${roomId}`).emit("room:deleted");
   res.sendStatus(204);
