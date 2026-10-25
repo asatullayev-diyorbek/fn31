@@ -101,6 +101,15 @@ async function token(user: User): Promise<string> {
     .sign(jwtKey);
 }
 
+const adminUid = process.env.ADMIN_TELEGRAM_ID ? `tg_${process.env.ADMIN_TELEGRAM_ID}` : null;
+
+async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const user = await getUser(req);
+  if (!user || !adminUid || user.uid !== adminUid) return void fail(res, 403, "Ruxsat yo'q.");
+  res.locals.user = user;
+  next();
+}
+
 async function isParticipant(roomId: string, uid: string): Promise<boolean> {
   const result = await pool.query("select 1 from participants where room_id=$1 and uid=$2", [roomId, uid]);
   return (result.rowCount ?? 0) > 0;
@@ -503,6 +512,65 @@ app.delete("/api/rooms/:roomId", required, async (req, res) => {
   const room = roomResult.rows[0] as { ownerUid: string } | undefined;
   if (!room) return fail(res, 404, "Xona topilmadi.");
   if (room.ownerUid !== user.uid) return fail(res, 403, "Faqat xona egasi xonani o'chira oladi.");
+
+  await withTransaction(async (client) => {
+    await client.query("delete from pieces where room_id=$1", [roomId]);
+    await client.query("delete from games where room_id=$1", [roomId]);
+    await client.query("delete from participants where room_id=$1", [roomId]);
+    await client.query("delete from rooms where id=$1", [roomId]);
+  });
+
+  io.to(`room:${roomId}`).emit("room:deleted");
+  res.sendStatus(204);
+});
+
+app.get("/api/admin/overview", requireAdmin, async (_req, res) => {
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const [usersResult, roomsResult, activeResult, completedResult, newUsersResult, newRoomsResult] = await Promise.all([
+    pool.query("select count(*) as count from users"),
+    pool.query("select count(*) as count from rooms"),
+    pool.query("select count(*) as count from rooms where status='open'"),
+    pool.query("select count(*) as count from games where completed_at is not null"),
+    pool.query("select count(*) as count from users where created_at >= $1", [todayIso]),
+    pool.query("select count(*) as count from rooms where created_at >= $1", [todayIso]),
+  ]);
+  res.json({
+    totalUsers: Number(usersResult.rows[0].count),
+    totalRooms: Number(roomsResult.rows[0].count),
+    activeRooms: Number(activeResult.rows[0].count),
+    completedPuzzles: Number(completedResult.rows[0].count),
+    newUsersToday: Number(newUsersResult.rows[0].count),
+    newRoomsToday: Number(newRoomsResult.rows[0].count),
+  });
+});
+
+app.get("/api/admin/users", requireAdmin, async (_req, res) => {
+  const result = await pool.query(
+    `select id, display_name as "displayName", telegram_username as "telegramUsername", created_at as "createdAt"
+     from users order by created_at desc`,
+  );
+  res.json({ users: result.rows });
+});
+
+app.get("/api/admin/rooms", requireAdmin, async (_req, res) => {
+  const result = await pool.query(`
+    select r.id as "roomId", r.status, r.visibility, r.created_at as "createdAt", r.updated_at as "updatedAt",
+           u.display_name as "ownerDisplayName",
+           g.image_id as "imageId", g.piece_count as "pieceCount", g.completed_at as "completedAt",
+           (select count(*) from participants p where p.room_id = r.id)::int as "participantCount",
+           (select count(*) from games gm where gm.room_id = r.id)::int as "gamesCount"
+    from rooms r
+    left join users u on u.id = r.owner_id
+    left join games g on g.room_id = r.id and g.id = r.current_game_id
+    order by r.created_at desc
+  `);
+  res.json({ rooms: result.rows });
+});
+
+app.delete("/api/admin/rooms/:roomId", requireAdmin, async (req, res) => {
+  const roomId = String(req.params.roomId);
+  const roomResult = await pool.query("select 1 from rooms where id=$1", [roomId]);
+  if (roomResult.rowCount === 0) return fail(res, 404, "Xona topilmadi.");
 
   await withTransaction(async (client) => {
     await client.query("delete from pieces where room_id=$1", [roomId]);

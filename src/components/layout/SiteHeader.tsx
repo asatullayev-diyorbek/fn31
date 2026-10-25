@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useTheme } from "@/features/theme/ThemeProvider";
+import { ADMIN_UID } from "@/features/admin/adminApi";
 import styles from "./SiteHeader.module.css";
 
 export function SiteHeader(): JSX.Element {
@@ -8,6 +9,7 @@ export function SiteHeader(): JSX.Element {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const isDashboard = location.pathname.startsWith("/dashboard");
+  const isAdmin = location.pathname.startsWith("/admin");
 
   return (
     <header className={styles.header}>
@@ -49,6 +51,14 @@ export function SiteHeader(): JSX.Element {
             >
               Boshqaruv paneli
             </Link>
+            {user.uid === ADMIN_UID && (
+              <Link
+                to="/admin"
+                className={`${styles.navDashboardBtn} ${isAdmin ? styles.activeDashboardBtn : ""}`}
+              >
+                Admin
+              </Link>
+            )}
             <div className={styles.navAvatar} title={user.displayName} aria-label={user.displayName}>
               <span className={styles.navAvatarInitial}>
                 {user.displayName.charAt(0).toUpperCase()}

@@ -7,6 +7,7 @@ import { RequireAuth } from "@/features/auth/RequireAuth";
 import { CreatePuzzlePage } from "@/features/rooms/CreatePuzzlePage";
 import { PuzzleRoomPage } from "@/features/puzzle/PuzzleRoomPage";
 import { JoinRoomPage } from "@/features/rooms/JoinRoomPage";
+import { AdminPage } from "@/features/admin/AdminPage";
 
 export function AppRouter(): JSX.Element {
   return (
@@ -20,6 +21,14 @@ export function AppRouter(): JSX.Element {
         element={
           <RequireAuth>
             <DashboardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <RequireAuth>
+            <AdminPage />
           </RequireAuth>
         }
       />
