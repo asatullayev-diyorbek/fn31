@@ -49,6 +49,18 @@ describe("computeGridLayout", () => {
     expect(rows).toBeGreaterThanOrEqual(1);
     expect(cols).toBeGreaterThanOrEqual(1);
   });
+
+  it("hits an exact match when one is available near the ideal, even off-square aspect ratios", () => {
+    // Regression: a single sqrt+round pass used to produce a 6x4 (24-piece)
+    // grid for this input — 5x5 (an exact 25) was one column away.
+    const { rows, cols } = computeGridLayout(25, 1.5);
+    expect(rows * cols).toBe(25);
+  });
+
+  it("still hits requested square counts exactly for a square image", () => {
+    expect(computeGridLayout(25, 1).cols * computeGridLayout(25, 1).rows).toBe(25);
+    expect(computeGridLayout(100, 1).cols * computeGridLayout(100, 1).rows).toBe(100);
+  });
 });
 
 describe("computeCropRect", () => {
