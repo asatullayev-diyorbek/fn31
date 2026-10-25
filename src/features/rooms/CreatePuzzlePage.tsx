@@ -7,6 +7,7 @@ import { mediaUrl } from "@/lib/api";
 import { DIFFICULTY_PRESETS, createRoom, validatePieceCount } from "@/features/rooms/roomsApi";
 import { PUZZLE_PIECE_COUNT_MAX, PUZZLE_PIECE_COUNT_MIN } from "@/app/config";
 import type { PuzzleMode, RoomVisibility } from "@/types/firestore";
+import { computeGridLayout } from "@/features/puzzle/geometry";
 import styles from "./CreatePuzzlePage.module.css";
 
 type ImageSource =
@@ -15,14 +16,76 @@ type ImageSource =
 
 const RECOMMENDED_TAB = "Tavsiya etilgan";
 
-function PuzzleGridOverlay(): JSX.Element {
+interface PuzzleGridOverlayProps {
+  cols: number;
+  rows: number;
+}
+
+function PuzzleGridOverlay({ cols, rows }: PuzzleGridOverlayProps): JSX.Element {
+  const safeCols = Math.max(1, cols);
+  const safeRows = Math.max(1, rows);
+
+  const vLines: number[] = [];
+  for (let c = 1; c < safeCols; c++) {
+    vLines.push((c / safeCols) * 100);
+  }
+
+  const hLines: number[] = [];
+  for (let r = 1; r < safeRows; r++) {
+    hLines.push((r / safeRows) * 100);
+  }
+
+  const total = safeCols * safeRows;
+  const strokeWidth = total > 220 ? 0.25 : total > 90 ? 0.35 : 0.5;
+
   return (
     <svg className={styles.previewGridOverlay} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-      {[20, 40, 60, 80].map((pos) => (
-        <line key={`v${pos}`} x1={pos} y1="0" x2={pos} y2="100" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" />
+      {/* Dark shadow lines so grid is clearly visible on light photos */}
+      {vLines.map((pos, idx) => (
+        <line
+          key={`shadow-v${idx}`}
+          x1={pos}
+          y1="0"
+          x2={pos}
+          y2="100"
+          stroke="rgba(0, 0, 0, 0.45)"
+          strokeWidth={strokeWidth * 2}
+        />
       ))}
-      {[20, 40, 60, 80].map((pos) => (
-        <line key={`h${pos}`} x1="0" y1={pos} x2="100" y2={pos} stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" />
+      {hLines.map((pos, idx) => (
+        <line
+          key={`shadow-h${idx}`}
+          x1="0"
+          y1={pos}
+          x2="100"
+          y2={pos}
+          stroke="rgba(0, 0, 0, 0.45)"
+          strokeWidth={strokeWidth * 2}
+        />
+      ))}
+
+      {/* Crisp white lines representing individual puzzle piece cuts */}
+      {vLines.map((pos, idx) => (
+        <line
+          key={`v${idx}`}
+          x1={pos}
+          y1="0"
+          x2={pos}
+          y2="100"
+          stroke="rgba(255, 255, 255, 0.65)"
+          strokeWidth={strokeWidth}
+        />
+      ))}
+      {hLines.map((pos, idx) => (
+        <line
+          key={`h${idx}`}
+          x1="0"
+          y1={pos}
+          x2="100"
+          y2={pos}
+          stroke="rgba(255, 255, 255, 0.65)"
+          strokeWidth={strokeWidth}
+        />
       ))}
     </svg>
   );
@@ -165,6 +228,16 @@ export function CreatePuzzlePage(): JSX.Element {
       : (imageSource?.previewUrl ?? null);
   const previewLabel = imageSource?.kind === "gallery" ? imageSource.label : imageSource?.kind === "upload" ? "O'z rasmingiz" : "—";
   const difficultyLabel = DIFFICULTY_PRESETS[difficulty].label;
+
+  const gridLayout = useMemo(() => {
+    const aspect =
+      imageSource && imageSource.width > 0 && imageSource.height > 0
+        ? imageSource.width / imageSource.height
+        : 4 / 3;
+    return computeGridLayout(pieceCount, aspect);
+  }, [imageSource, pieceCount]);
+
+  const actualPieceCount = gridLayout.cols * gridLayout.rows;
 
   return (
     <form className={styles.page} onSubmit={handleSubmit}>
@@ -310,11 +383,17 @@ export function CreatePuzzlePage(): JSX.Element {
           <div className={styles.previewCard}>
             <h2 className={styles.previewTitle}>Pazl ko&apos;rinishi</h2>
             <p className={styles.cardSubtitle}>Tanlangan rasm va sozlamalar asosida taxminiy ko&apos;rinish</p>
-            <div className={styles.previewImageBox}>
+            <div
+              className={styles.previewImageBox}
+              style={{ aspectRatio: `${imageSource?.width ?? 4} / ${imageSource?.height ?? 3}` }}
+            >
               {previewUrl ? (
                 <>
                   <img src={previewUrl} alt={previewLabel} className={styles.previewImage} />
-                  <PuzzleGridOverlay />
+                  <PuzzleGridOverlay cols={gridLayout.cols} rows={gridLayout.rows} />
+                  <div className={styles.gridBadge}>
+                    {actualPieceCount} bo&apos;lak ({gridLayout.cols} × {gridLayout.rows})
+                  </div>
                 </>
               ) : (
                 <div className={styles.previewPlaceholder}>Rasm tanlanmagan</div>
@@ -331,7 +410,7 @@ export function CreatePuzzlePage(): JSX.Element {
               </div>
               <div className={styles.summaryRow}>
                 <dt>Bo&apos;laklar soni</dt>
-                <dd>{pieceCount}</dd>
+                <dd>{actualPieceCount} ({gridLayout.cols} × {gridLayout.rows})</dd>
               </div>
               <div className={styles.summaryRow}>
                 <dt>Qiyinchilik</dt>
