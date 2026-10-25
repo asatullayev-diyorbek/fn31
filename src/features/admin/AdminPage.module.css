@@ -209,3 +209,110 @@
   font-size: 12px;
   color: var(--color-text-muted);
 }
+
+.gamesCountBtn {
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.gamesCountBtn:hover {
+  background: var(--color-accent-hover);
+  transform: scale(1.1);
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  z-index: 100;
+}
+
+.modalCard {
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--liquid-glass-shadow-lg);
+  max-width: 480px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: var(--space-5);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+  gap: var(--space-3);
+}
+
+.modalTitle {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.modalCloseBtn {
+  appearance: none;
+  background: var(--color-surface);
+  border: none;
+  border-radius: var(--radius-full);
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.modalCloseBtn:hover {
+  background: var(--color-surface-hover);
+}
+
+.modalGamesList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.modalGameRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.modalGameThumb {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--color-surface);
+}
+
+.modalGameInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.modalGameTitle {
+  font-size: 14px;
+  font-weight: 600;
+}

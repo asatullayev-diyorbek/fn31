@@ -60,3 +60,15 @@ export async function fetchAdminGalleryImages(): Promise<AdminGalleryImage[]> {
 export async function deleteRoomAsAdmin(roomId: string): Promise<void> {
   await api(`/api/admin/rooms/${encodeURIComponent(roomId)}`, { method: "DELETE" });
 }
+
+export interface AdminRoomGame {
+  gameId: string;
+  imageId: string;
+  pieceCount: number;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export async function fetchAdminRoomGames(roomId: string): Promise<AdminRoomGame[]> {
+  return (await api<{ games: AdminRoomGame[] }>(`/api/admin/rooms/${encodeURIComponent(roomId)}/games`)).games;
+}

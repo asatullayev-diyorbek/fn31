@@ -7,16 +7,24 @@ import {
   deleteRoomAsAdmin,
   fetchAdminGalleryImages,
   fetchAdminOverview,
+  fetchAdminRoomGames,
   fetchAdminRooms,
   fetchAdminUsers,
   type AdminGalleryImage,
   type AdminOverview,
   type AdminRoom,
+  type AdminRoomGame,
   type AdminUser,
 } from "./adminApi";
 import styles from "./AdminPage.module.css";
 
 type Tab = "users" | "rooms" | "gallery";
+
+function resolveImageUrl(imageId: string): string {
+  return imageId.startsWith("gallery:")
+    ? mediaUrl(`/gallery/${imageId.slice("gallery:".length)}`)
+    : mediaUrl(`/media/${imageId}`);
+}
 
 function formatDate(isoDateString?: string | null): string {
   if (!isoDateString) return "—";
@@ -41,6 +49,9 @@ export function AdminPage(): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null);
+  const [gamesModalRoomId, setGamesModalRoomId] = useState<string | null>(null);
+  const [roomGames, setRoomGames] = useState<AdminRoomGame[]>([]);
+  const [roomGamesLoading, setRoomGamesLoading] = useState(false);
 
   const isAdmin = user?.uid === ADMIN_UID;
 
@@ -62,6 +73,18 @@ export function AdminPage(): JSX.Element {
       active = false;
     };
   }, [isAdmin]);
+
+  async function openRoomGames(roomId: string): Promise<void> {
+    setGamesModalRoomId(roomId);
+    setRoomGamesLoading(true);
+    try {
+      setRoomGames(await fetchAdminRoomGames(roomId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Pazllar ro'yxatini yuklab bo'lmadi.");
+    } finally {
+      setRoomGamesLoading(false);
+    }
+  }
 
   async function handleDeleteRoom(roomId: string): Promise<void> {
     if (!window.confirm("Bu xonani butunlay o'chirishni tasdiqlaysizmi?")) return;
@@ -188,7 +211,16 @@ export function AdminPage(): JSX.Element {
                     </td>
                     <td>{room.pieceCount ?? "—"}</td>
                     <td>{room.participantCount}</td>
-                    <td>{room.gamesCount}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className={styles.gamesCountBtn}
+                        onClick={() => void openRoomGames(room.roomId)}
+                        title="Bu xonada terilgan rasmlar ro'yxati"
+                      >
+                        {room.gamesCount}
+                      </button>
+                    </td>
                     <td>{formatDate(room.createdAt)}</td>
                     <td>
                       <button
@@ -232,6 +264,39 @@ export function AdminPage(): JSX.Element {
               {gallery.length === 0 && <p className={styles.muted}>Galereyada rasm yo&apos;q.</p>}
             </div>
           )}
+        </div>
+      )}
+
+      {gamesModalRoomId && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true" onClick={() => setGamesModalRoomId(null)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>
+                Xonada terilgan rasmlar <span className={styles.mono}>({gamesModalRoomId})</span>
+              </h2>
+              <button type="button" className={styles.modalCloseBtn} onClick={() => setGamesModalRoomId(null)} aria-label="Yopish">
+                ✕
+              </button>
+            </div>
+            {roomGamesLoading ? (
+              <p className={styles.muted}>Yuklanmoqda…</p>
+            ) : (
+              <div className={styles.modalGamesList}>
+                {roomGames.map((game, index) => (
+                  <div key={game.gameId} className={styles.modalGameRow}>
+                    <img src={resolveImageUrl(game.imageId)} alt="" className={styles.modalGameThumb} />
+                    <div className={styles.modalGameInfo}>
+                      <span className={styles.modalGameTitle}>{index + 1}-pazl · {game.pieceCount} bo&apos;lak</span>
+                      <span className={styles.galleryUsage}>
+                        {game.completedAt ? `Yakunlangan: ${formatDate(game.completedAt)}` : `Boshlangan: ${formatDate(game.createdAt)}`}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {roomGames.length === 0 && <p className={styles.muted}>Bu xonada hali pazl yo&apos;q.</p>}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

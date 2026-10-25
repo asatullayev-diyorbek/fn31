@@ -567,6 +567,17 @@ app.get("/api/admin/rooms", requireAdmin, async (_req, res) => {
   res.json({ rooms: result.rows });
 });
 
+app.get("/api/admin/rooms/:roomId/games", requireAdmin, async (req, res) => {
+  const roomId = String(req.params.roomId);
+  const result = await pool.query(
+    `select id as "gameId", image_id as "imageId", piece_count as "pieceCount",
+            created_at as "createdAt", completed_at as "completedAt"
+     from games where room_id=$1 order by created_at asc`,
+    [roomId],
+  );
+  res.json({ games: result.rows });
+});
+
 app.delete("/api/admin/rooms/:roomId", requireAdmin, async (req, res) => {
   const roomId = String(req.params.roomId);
   const roomResult = await pool.query("select 1 from rooms where id=$1", [roomId]);
