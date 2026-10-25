@@ -45,6 +45,7 @@ export interface EngineEvents {
  * drag results, without this class knowing Firebase exists.
  */
 export class PuzzleEngine {
+  private readonly canvas: HTMLCanvasElement;
   private readonly renderer: PuzzleCanvasRenderer;
   private readonly geometry: GeometryResult;
   private readonly config: PuzzleEngineConfig;
@@ -72,6 +73,7 @@ export class PuzzleEngine {
     config: PuzzleEngineConfig,
     events: EngineEvents = {},
   ) {
+    this.canvas = canvas;
     this.geometry = geometry;
     this.config = config;
     this.events = events;
@@ -166,6 +168,25 @@ export class PuzzleEngine {
       panX: viewport.panX + dxScreen,
       panY: viewport.panY + dyScreen,
     });
+  }
+
+  getViewport() {
+    return this.renderer.getViewport();
+  }
+
+  getZoom(): number {
+    return this.renderer.getViewport().zoom;
+  }
+
+  setZoom(zoom: number, anchorScreenX?: number, anchorScreenY?: number): void {
+    const viewport = this.renderer.getViewport();
+    const cx = anchorScreenX ?? (this.canvas.clientWidth ? this.canvas.clientWidth / 2 : 0);
+    const cy = anchorScreenY ?? (this.canvas.clientHeight ? this.canvas.clientHeight / 2 : 0);
+    this.renderer.setViewport(zoomAroundPoint(viewport, zoom, cx, cy));
+  }
+
+  hitTest(screenX: number, screenY: number): number | null {
+    return this.renderer.hitTest(screenX, screenY);
   }
 
   resizeCanvas(): void {

@@ -2,39 +2,53 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(5, 7, 13, 0.7);
-  backdrop-filter: blur(20px) saturate(140%);
+  padding: 12px var(--space-6);
+  border-bottom: 1px solid var(--liquid-glass-border);
+  background: rgba(10, 14, 26, 0.75);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 50;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 10px;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 19px;
   text-decoration: none;
   color: var(--color-text);
+  letter-spacing: -0.02em;
+  transition: opacity 0.2s ease;
+}
+
+.brand:hover {
+  opacity: 0.9;
 }
 
 .logo {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #78d3ff, #1877f2 65%, #10152a);
+  background: linear-gradient(135deg, #2997ff 0%, #0071e3 50%, #30b0c7 100%);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  box-shadow: 0 8px 18px rgba(39, 147, 255, 0.35);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.45),
+    0 6px 16px rgba(0, 113, 227, 0.4);
 }
 
-.brandAccent { color: #55baff; }
+.brandAccent {
+  background: linear-gradient(135deg, #64b5f6, #30b0c7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
 .nav {
   display: flex;
@@ -44,21 +58,36 @@
 
 .navLinks {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--space-5);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .navLinks a {
-  color: #c6d2e5;
+  color: var(--color-text-muted);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
+  transition: color 0.18s ease;
 }
 
 .navLinks a:hover {
-  color: #70c4ff;
+  color: var(--color-text);
+}
+
+.userBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  background: var(--liquid-glass-bg);
+  border: 1px solid var(--liquid-glass-border);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 550;
+  box-shadow: var(--liquid-glass-shine);
 }
 
 @media (max-width: 720px) {

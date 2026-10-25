@@ -1,30 +1,229 @@
 .wrapper {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  width: 100%;
   height: 100%;
+  min-height: 480px;
+}
+
+.wrapperFullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
+  background: var(--color-bg) !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
 }
 
 .canvasContainer {
   position: relative;
   flex: 1;
-  min-height: 320px;
-  border-radius: var(--radius-lg);
-  background: repeating-conic-gradient(#e2e8f0 0% 25%, #f1f5f9 0% 50%) 50% / 24px 24px;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(30, 48, 80, 0.4), transparent 70%),
+    radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    #0a0e1c;
   overflow: hidden;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--liquid-glass-border);
+  box-shadow: var(--liquid-glass-shine), var(--liquid-glass-shadow);
   touch-action: none;
+  user-select: none;
+  transition: border-radius 0.25s ease;
+}
+
+.wrapperFullscreen .canvasContainer {
+  border-radius: 0;
+  border: none;
 }
 
 .canvas {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.cursorGrab {
   cursor: grab;
 }
 
-.controls {
+.cursorGrabbing {
+  cursor: grabbing !important;
+}
+
+.cursorPan {
+  cursor: grab;
+}
+
+.cursorPanActive {
+  cursor: grabbing !important;
+}
+
+/* Apple Floating Island Controls Bar */
+.floatingControls {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  gap: var(--space-2);
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(15, 22, 38, 0.78);
+  backdrop-filter: blur(32px) saturate(210%);
+  -webkit-backdrop-filter: blur(32px) saturate(210%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  box-shadow:
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.38),
+    0 20px 48px -8px rgba(0, 0, 0, 0.55),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 20;
+  pointer-events: auto;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 95vw;
+}
+
+.floatingControls:hover {
+  background: rgba(18, 27, 46, 0.88);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.controlDivider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.16);
+  margin: 0 2px;
+}
+
+.controlBtn {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.controlBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.controlBtn:active {
+  transform: scale(0.95);
+}
+
+.controlBtnActive {
+  background: var(--color-accent-liquid) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 16px rgba(0, 113, 227, 0.6) !important;
+}
+
+.iconControlBtn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.iconControlBtn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  transform: scale(1.06);
+}
+
+.iconControlBtn:active {
+  transform: scale(0.92);
+}
+
+.iconControlBtnActive {
+  background: var(--color-accent-liquid) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 16px rgba(0, 113, 227, 0.5) !important;
+}
+
+.zoomIndicator {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  min-width: 44px;
+  text-align: center;
+  padding: 0 4px;
+  user-select: none;
+}
+
+/* Floating Hint Badge */
+.floatingHint {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(12, 17, 30, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.hintKbd {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .floatingControls {
+    bottom: 16px;
+    gap: 4px;
+    padding: 5px 8px;
+  }
+  .floatingHint {
+    display: none;
+  }
+  .controlBtn {
+    padding: 0 8px;
+    font-size: 12px;
+  }
 }

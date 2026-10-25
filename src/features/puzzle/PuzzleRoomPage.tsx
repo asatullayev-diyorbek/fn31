@@ -19,6 +19,7 @@ export function PuzzleRoomPage(): JSX.Element {
   const [imageError, setImageError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const engineRef = useRef<PuzzleEngine | null>(null);
 
@@ -97,48 +98,95 @@ export function PuzzleRoomPage(): JSX.Element {
       </div>
     );
   }
+
   if (imageError) {
     return (
       <div className={styles.page}>
-        <p role="alert">{imageError}</p>
+        <div style={{ margin: "auto", textAlign: "center", padding: "2rem" }}>
+          <p role="alert" style={{ color: "var(--color-danger)", fontSize: "16px" }}>{imageError}</p>
+        </div>
       </div>
     );
   }
   if (!sync.game || !image || !geometry) {
     return (
       <div className={styles.page}>
-        <p role="status">O&apos;yin yuklanmoqda…</p>
+        <div style={{ margin: "auto", textAlign: "center", padding: "2rem" }}>
+          <p role="status" style={{ color: "var(--color-text-muted)", fontSize: "16px" }}>O&apos;yin yuklanmoqda…</p>
+        </div>
       </div>
     );
   }
 
+  const progressPercent = Math.round(progress * 100);
+
   return (
     <div className={styles.page}>
-      <div className={styles.sidebar}>
-        <div className={styles.inviteRow}>
-          <code className={styles.inviteCode}>{roomId}</code>
-          <button type="button" className="btn btn-secondary" onClick={copyInviteLink}>
-            {copied ? "Nusxalandi!" : "Havolani nusxalash"}
-          </button>
+      {/* Sidebar Toggle Button */}
+      <button
+        type="button"
+        className={styles.sidebarToggleBtn}
+        onClick={() => setIsSidebarOpen((prev) => !prev)}
+        title={isSidebarOpen ? "Yon panelni yashirish" : "Yon panelni ochish"}
+        aria-label="Yon panel holati"
+      >
+        {isSidebarOpen ? "◀" : "▶"}
+      </button>
+
+      {/* Apple Liquid Glass Sidebar */}
+      <aside className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarCollapsed : ""}`}>
+        <div className={styles.roomHeader}>
+          <span className={styles.roomTitle}>Xona ma&apos;lumotlari</span>
+          <div className={styles.inviteRow}>
+            <code className={styles.inviteCode} title={roomId}>{roomId}</code>
+            <button
+              type="button"
+              className={`btn btn-secondary ${styles.copyBtn} ${copied ? styles.copyBtnSuccess : ""}`}
+              onClick={copyInviteLink}
+            >
+              {copied ? "✓ Nusxalandi" : "Nusxalash"}
+            </button>
+          </div>
         </div>
-        <p className={styles.modeInfo}>
-          {sync.game.mode === "classic" ? "Klassik" : "Erkin"} rejim · {sync.game.pieceCount} bo&apos;lak
-        </p>
-        <p className={styles.progressInfo} role="status" aria-live="polite">
-          Progress: {Math.round(progress * 100)}%
-        </p>
-        <h2>Ishtirokchilar</h2>
-        <ul className={styles.participants}>
-          {sync.participants.map((p) => (
-            <li key={p.uid}>
-              <span className={p.online ? styles.online : styles.offline} aria-hidden="true" />
-              {p.displayName}
-              <span className="visually-hidden">{p.online ? " (onlayn)" : " (oflayn)"}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className={styles.boardArea}>
+
+        <div className={styles.modeBadge}>
+          <span>✦</span>
+          <span>{sync.game.mode === "classic" ? "Klassik" : "Erkin"} rejim · {sync.game.pieceCount} bo&apos;lak</span>
+        </div>
+
+        {/* Progress Card */}
+        <div className={styles.progressCard}>
+          <div className={styles.progressLabelRow}>
+            <span>Yig&apos;ilish jarayoni</span>
+            <span className={styles.progressValue}>{progressPercent}%</span>
+          </div>
+          <div className={styles.progressBarBg} role="progressbar" aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100}>
+            <div className={styles.progressBarFill} style={{ width: `${progressPercent}%` }} />
+          </div>
+        </div>
+
+        {/* Participants list */}
+        <div className={styles.participantsSection}>
+          <span className={styles.sectionHeader}>Ishtirokchilar ({sync.participants.length})</span>
+          <ul className={styles.participants}>
+            {sync.participants.map((p) => (
+              <li key={p.uid} className={styles.participantItem}>
+                <span
+                  className={`${styles.statusDot} ${p.online ? styles.online : styles.offline}`}
+                  aria-hidden="true"
+                />
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {p.displayName}
+                </span>
+                <span className="visually-hidden">{p.online ? " (onlayn)" : " (oflayn)"}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </aside>
+
+      {/* Main Board Area */}
+      <main className={styles.boardArea}>
         <PuzzleBoard
           geometry={geometry}
           image={image}
@@ -158,7 +206,7 @@ export function PuzzleRoomPage(): JSX.Element {
           onDragMove={handleDragMove}
           onCommitPositions={handleCommitPositions}
         />
-      </div>
+      </main>
     </div>
   );
 }
