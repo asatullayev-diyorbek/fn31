@@ -23,18 +23,24 @@ export function PuzzleRoomPage(): JSX.Element {
 
   const engineRef = useRef<PuzzleEngine | null>(null);
 
+  const gameId = sync.game?.gameId;
+  const imageId = sync.game?.imageId;
+  const geometrySeed = sync.game?.geometrySeed;
+  const pieceCount = sync.game?.pieceCount;
+  const geometryVersion = sync.game?.geometryVersion;
+
   useEffect(() => {
-    if (!sync.game) return;
+    if (!imageId || !geometrySeed || !pieceCount) return;
     let cancelled = false;
-    loadPuzzleImage(sync.game.imageId)
+    loadPuzzleImage(imageId)
       .then((img) => {
         if (cancelled) return;
         setImage(img);
         setGeometry(
           generatePuzzleGeometry({
-            seed: sync.game!.geometrySeed,
-            geometryVersion: sync.game!.geometryVersion,
-            pieceCount: sync.game!.pieceCount,
+            seed: geometrySeed,
+            geometryVersion: geometryVersion ?? 1,
+            pieceCount: pieceCount,
             imageAspectRatio: img.naturalWidth / img.naturalHeight,
           }),
         );
@@ -43,7 +49,7 @@ export function PuzzleRoomPage(): JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [sync.game]);
+  }, [gameId, imageId, geometrySeed, pieceCount, geometryVersion]);
 
   const initialPositions = useMemo<Map<number, PiecePosition>>(() => {
     const map = new Map<number, PiecePosition>();

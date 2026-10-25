@@ -52,9 +52,14 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
   // Tracks multi-touch pointers for pinch zoom & pan
   const touchesRef = useRef<Map<number, { x: number; y: number }>>(new Map());
 
+  // Preserves user's current zoom and pan across any component re-render or piece sync
+  const savedViewportRef = useRef<import("@/features/puzzle/rendering/types").Viewport | null>(null);
+
   const updateZoomDisplay = useCallback(() => {
     if (engineRef.current) {
-      setZoomPercent(Math.round(engineRef.current.getZoom() * 100));
+      const currentViewport = engineRef.current.getViewport();
+      savedViewportRef.current = currentViewport;
+      setZoomPercent(Math.round(currentViewport.zoom * 100));
     }
   }, []);
 
@@ -93,7 +98,14 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
     } else {
       engine.scatterPieces(props.seed, container.clientWidth, container.clientHeight);
     }
-    engine.fitToScreen(container.clientWidth, container.clientHeight);
+
+    // If user already had a zoom/pan viewport, restore it! Otherwise, fit to screen.
+    if (savedViewportRef.current) {
+      engine.setViewport(savedViewportRef.current);
+    } else {
+      engine.fitToScreen(container.clientWidth, container.clientHeight);
+      savedViewportRef.current = engine.getViewport();
+    }
     updateZoomDisplay();
 
     props.onEngineReady?.(engine);
@@ -240,6 +252,9 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
         panStateRef.current.lastX = point.x;
         panStateRef.current.lastY = point.y;
         engineRef.current?.panBy(dx, dy);
+        if (engineRef.current) {
+          savedViewportRef.current = engineRef.current.getViewport();
+        }
         return;
       }
 
@@ -256,6 +271,9 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
       if (panStateRef.current.active && panStateRef.current.pointerId === event.pointerId) {
         panStateRef.current.active = false;
         setIsDraggingCanvas(false);
+        if (engineRef.current) {
+          savedViewportRef.current = engineRef.current.getViewport();
+        }
         return;
       }
 

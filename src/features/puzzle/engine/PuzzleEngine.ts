@@ -174,6 +174,10 @@ export class PuzzleEngine {
     return this.renderer.getViewport();
   }
 
+  setViewport(viewport: import("@/features/puzzle/rendering/types").Viewport): void {
+    this.renderer.setViewport(viewport);
+  }
+
   getZoom(): number {
     return this.renderer.getViewport().zoom;
   }
