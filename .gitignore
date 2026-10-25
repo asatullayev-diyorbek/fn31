@@ -22,3 +22,5 @@ backend/data/
 !.vscode/extensions.json
 .DS_Store
 .vercel
+backend/gallery/*
+!backend/gallery/.gitkeep

@@ -5,7 +5,7 @@ import { useRoomSync } from "@/features/puzzle/synchronization/useRoomSync";
 import { completeRoom, deleteRoom } from "@/features/rooms/roomsApi";
 import { api, getSocket } from "@/lib/api";
 import { loadPuzzleImage } from "@/features/images/loadPuzzleImage";
-import { findGalleryImage } from "@/features/images/gallery";
+import { galleryLabelFromId, isGalleryImageId } from "@/features/images/gallery";
 import { generatePuzzleGeometry, type GeometryResult } from "@/features/puzzle/geometry";
 import { PuzzleBoard } from "./PuzzleBoard";
 import type { PuzzleEngine } from "@/features/puzzle/engine/PuzzleEngine";
@@ -266,7 +266,9 @@ export function PuzzleRoomPage(): JSX.Element {
   const progressPercent = Math.round(progress * 100);
   const totalPieces = sync.game.pieceCount;
   const placedPieces = Math.min(totalPieces, Math.round(progress * totalPieces));
-  const puzzleTitle = findGalleryImage(sync.game.imageId)?.label ?? "Tabiat manzarasi";
+  const puzzleTitle = isGalleryImageId(sync.game.imageId)
+    ? galleryLabelFromId(sync.game.imageId)
+    : "Yuklangan rasm";
   const isOwner = Boolean(user && sync.room && user.uid === sync.room.ownerUid);
 
   return (

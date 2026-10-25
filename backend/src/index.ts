@@ -10,10 +10,12 @@ import { SignJWT, jwtVerify } from "jose";
 import multer from "multer";
 import { Server } from "socket.io";
 import { z } from "zod";
+import { scanGalleryImages } from "./gallery.js";
 
 const port = Number(process.env.PORT ?? 8080);
 const origins = (process.env.WEB_ORIGIN ?? "http://localhost:5173").split(",").map((x) => x.trim()).filter(Boolean);
 const uploadDirectory = process.env.UPLOAD_DIRECTORY ?? path.resolve("data/uploads");
+const galleryDirectory = process.env.GALLERY_DIRECTORY ?? path.resolve("gallery");
 const databaseFile = process.env.DATABASE_FILE ?? path.join(path.dirname(uploadDirectory), "puzzletogether.sqlite");
 const jwtKey = new TextEncoder().encode(process.env.JWT_SECRET ?? "development-only-change-me-before-production");
 const app = express();
@@ -27,6 +29,8 @@ type Piece = { pieceId: number; x: number; y: number; rotation: 0 | 90 | 180 | 2
 app.use(cors({ origin: origins }));
 app.use(express.json({ limit: "4mb" }));
 app.use("/media", express.static(uploadDirectory, { maxAge: "1y", immutable: true }));
+app.use("/gallery", express.static(galleryDirectory, { maxAge: "1d" }));
+app.get("/api/gallery", async (_req, res) => { res.json({ images: await scanGalleryImages(galleryDirectory) }); });
 io.use(async (socket, next) => {
   const supplied = socket.handshake.auth?.token;
   if (typeof supplied !== "string") return next(new Error("unauthorized"));
@@ -183,5 +187,5 @@ io.on("connection", (socket) => {
     if (event?.roomId && Number.isInteger(event.pieceId) && db.prepare("select 1 from participants where room_id=? and uid=?").get(event.roomId, socket.data.uid)) socket.to(`room:${event.roomId}`).emit("piece:moved", { ...event, uid: socket.data.uid });
   });
 });
-async function bootstrap(): Promise<void> { await mkdir(uploadDirectory, { recursive: true }); db = new DatabaseSync(databaseFile); db.exec(`create table if not exists users (id text primary key,telegram_id text unique,display_name text not null,telegram_username text,created_at text not null); create table if not exists auth_transactions (id text primary key,status text not null,expires_at integer not null,telegram_user_id text,telegram_username text,display_name text); create table if not exists rooms (id text primary key,owner_id text not null,status text not null,visibility text not null,current_game_id text,created_at text not null,updated_at text not null); create table if not exists participants (room_id text not null,uid text not null,display_name text not null,role text not null,joined_at text not null,last_seen_at text not null,connection_status text not null,primary key(room_id,uid)); create table if not exists games (id text not null,room_id text not null,mode text not null,image_id text not null,piece_count integer not null,columns integer not null,rows integer not null,geometry_seed text not null,geometry_version integer not null,snap_enabled integer not null,rotation_enabled integer not null,snap_tolerance_ratio real not null,state_version integer not null,progress real not null,created_at text not null,updated_at text not null,completed_at text,primary key(room_id,id)); create table if not exists pieces (room_id text not null,game_id text not null,chunk_id text not null,payload text not null,primary key(room_id,game_id,chunk_id));`); try { db.exec("alter table games add column completed_at text"); } catch { /* already migrated */ } http.listen(port, () => console.log(`PuzzleTogether API listening on :${port}`)); }
+async function bootstrap(): Promise<void> { await mkdir(uploadDirectory, { recursive: true }); await mkdir(galleryDirectory, { recursive: true }); db = new DatabaseSync(databaseFile); db.exec(`create table if not exists users (id text primary key,telegram_id text unique,display_name text not null,telegram_username text,created_at text not null); create table if not exists auth_transactions (id text primary key,status text not null,expires_at integer not null,telegram_user_id text,telegram_username text,display_name text); create table if not exists rooms (id text primary key,owner_id text not null,status text not null,visibility text not null,current_game_id text,created_at text not null,updated_at text not null); create table if not exists participants (room_id text not null,uid text not null,display_name text not null,role text not null,joined_at text not null,last_seen_at text not null,connection_status text not null,primary key(room_id,uid)); create table if not exists games (id text not null,room_id text not null,mode text not null,image_id text not null,piece_count integer not null,columns integer not null,rows integer not null,geometry_seed text not null,geometry_version integer not null,snap_enabled integer not null,rotation_enabled integer not null,snap_tolerance_ratio real not null,state_version integer not null,progress real not null,created_at text not null,updated_at text not null,completed_at text,primary key(room_id,id)); create table if not exists pieces (room_id text not null,game_id text not null,chunk_id text not null,payload text not null,primary key(room_id,game_id,chunk_id));`); try { db.exec("alter table games add column completed_at text"); } catch { /* already migrated */ } http.listen(port, () => console.log(`PuzzleTogether API listening on :${port}`)); }
 bootstrap().catch((error) => { console.error(error); process.exit(1); });

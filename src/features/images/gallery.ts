@@ -1,34 +1,38 @@
+import { api } from "@/lib/api";
+
+/** A real image served by the backend from `backend/gallery/<categorySlug>/<file>` — see backend/README.md for how to add more. */
 export interface GalleryImage {
-  /** Prefixed with "gallery:" so the puzzle-loading code can tell a
-   * built-in image (generated client-side, see placeholderImage.ts) apart
-   * from a real `images/{imageId}` Storage-backed upload without an extra
-   * Firestore read. */
+  /** `gallery:<categorySlug>/<file>` — self-describing: callers build the static URL
+   * (`/gallery/<categorySlug>/<file>`) directly from this id, the same way an
+   * uploaded image's id maps to `/media/<id>`. No lookup/fetch required. */
   imageId: string;
   label: string;
+  category: string;
+  categorySlug: string;
   width: number;
   height: number;
 }
-
-/**
- * Built-in gallery. In this environment there is no deployed Storage
- * bucket to seed with real photography (see docs/deployment.md), so
- * gallery images are generated on the client from a label + color, the
- * same way the Phase 3 demo's placeholder image works — a real
- * deployment would instead seed `images/{imageId}` docs with
- * `ownerUid: null` and real Storage objects (see firestore.rules'
- * comment on why clients can never create those themselves).
- */
-export const GALLERY_IMAGES: GalleryImage[] = [
-  { imageId: "gallery:tog-manzarasi", label: "Tog' manzarasi", width: 1200, height: 800 },
-  { imageId: "gallery:dengiz", label: "Dengiz sohili", width: 1200, height: 800 },
-  { imageId: "gallery:shahar", label: "Shahar ko'chasi", width: 1200, height: 900 },
-  { imageId: "gallery:gullar", label: "Rang-barang gullar", width: 1000, height: 1000 },
-];
 
 export function isGalleryImageId(imageId: string): boolean {
   return imageId.startsWith("gallery:");
 }
 
-export function findGalleryImage(imageId: string): GalleryImage | undefined {
-  return GALLERY_IMAGES.find((image) => image.imageId === imageId);
+/** The `<categorySlug>/<file>` part of a gallery id — the path under `/gallery/`. */
+export function galleryImagePath(imageId: string): string {
+  return imageId.slice("gallery:".length);
+}
+
+/** A human label derived straight from a gallery id's filename, with no network round trip — used where only the id is on hand (e.g. the puzzle room's title). */
+export function galleryLabelFromId(imageId: string): string {
+  const fileName = galleryImagePath(imageId).split("/").pop() ?? "";
+  const base = fileName.replace(/\.[^.]+$/, "");
+  return base
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+export async function fetchGalleryImages(): Promise<GalleryImage[]> {
+  return (await api<{ images: GalleryImage[] }>("/api/gallery")).images;
 }
