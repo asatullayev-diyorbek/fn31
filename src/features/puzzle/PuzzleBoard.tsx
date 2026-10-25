@@ -19,6 +19,7 @@ export interface PuzzleBoardProps {
   seed: string;
   progress?: number;
   initialPositions?: ReadonlyMap<number, PiecePosition>;
+  headerLeading?: React.ReactNode;
   onProgressChange?: (progress: number) => void;
   onComplete?: () => void;
   onCommitPositions?: (changed: ReadonlyMap<number, PiecePosition>) => void;
@@ -464,64 +465,68 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
     >
       {/* 1. TOP CANVAS TOOLBAR */}
       <div className={styles.topToolbar} role="toolbar" aria-label="Kanvas asosiy boshqaruvi">
-        {/* Left tool pills */}
-        <div className={styles.toolGroup}>
-          {/* Surish (Pan / Hand tool) */}
-          <button
-            type="button"
-            className={`${styles.toolBtn} ${activeTool === "pan" ? styles.toolBtnActive : ""}`}
-            onClick={() => setActiveTool("pan")}
-            title="Surish (Pan rejimi: taxtani erkin surish)"
-            aria-pressed={activeTool === "pan"}
-          >
-            <span className={styles.toolIcon}>✋</span>
-            <span>Surish</span>
-          </button>
+        <div className={styles.toolbarLeftSection}>
+          {props.headerLeading}
 
-          {/* Tanlash (Select tool) */}
-          <button
-            type="button"
-            className={`${styles.toolBtn} ${activeTool === "select" ? styles.toolBtnActive : ""}`}
-            onClick={() => setActiveTool("select")}
-            title="Tanlash (Bo'laklarni surish va yig'ish)"
-            aria-pressed={activeTool === "select"}
-          >
-            <span className={styles.toolIcon}>↖</span>
-            <span>Tanlash</span>
-          </button>
+          {/* Left tool pills */}
+          <div className={styles.toolGroup}>
+            {/* Surish (Pan / Hand tool) */}
+            <button
+              type="button"
+              className={`${styles.toolBtn} ${activeTool === "pan" ? styles.toolBtnActive : ""}`}
+              onClick={() => setActiveTool("pan")}
+              title="Surish (Pan rejimi: taxtani erkin surish)"
+              aria-pressed={activeTool === "pan"}
+            >
+              <span className={styles.toolIcon}>✋</span>
+              <span>Surish</span>
+            </button>
 
-          {/* Aylantirish */}
-          <button
-            type="button"
-            className={styles.toolBtn}
-            onClick={() => rotateSelectionBy(90)}
-            title="Tanlangan bo'lakni 90° aylantirish (R)"
-          >
-            <span className={styles.toolIcon}>🔄</span>
-            <span>Aylantirish</span>
-          </button>
+            {/* Tanlash (Select tool) */}
+            <button
+              type="button"
+              className={`${styles.toolBtn} ${activeTool === "select" ? styles.toolBtnActive : ""}`}
+              onClick={() => setActiveTool("select")}
+              title="Tanlash (Bo'laklarni surish va yig'ish)"
+              aria-pressed={activeTool === "select"}
+            >
+              <span className={styles.toolIcon}>↖</span>
+              <span>Tanlash</span>
+            </button>
 
-          {/* Masshtab */}
-          <button
-            type="button"
-            className={styles.toolBtn}
-            onClick={zoomIn}
-            title="Masshtabni oshirish"
-          >
-            <span className={styles.toolIcon}>🔍</span>
-            <span>Masshtab</span>
-          </button>
+            {/* Aylantirish */}
+            <button
+              type="button"
+              className={styles.toolBtn}
+              onClick={() => rotateSelectionBy(90)}
+              title="Tanlangan bo'lakni 90° aylantirish (R)"
+            >
+              <span className={styles.toolIcon}>🔄</span>
+              <span>Aylantirish</span>
+            </button>
 
-          {/* Panorama */}
-          <button
-            type="button"
-            className={styles.toolBtn}
-            onClick={fitToScreen}
-            title="Panorama (Ekranga to'liq moslash)"
-          >
-            <span className={styles.toolIcon}>✥</span>
-            <span>Panorama</span>
-          </button>
+            {/* Masshtab */}
+            <button
+              type="button"
+              className={styles.toolBtn}
+              onClick={zoomIn}
+              title="Masshtabni oshirish"
+            >
+              <span className={styles.toolIcon}>🔍</span>
+              <span>Masshtab</span>
+            </button>
+
+            {/* Panorama */}
+            <button
+              type="button"
+              className={styles.toolBtn}
+              onClick={fitToScreen}
+              title="Panorama (Ekranga to'liq moslash)"
+            >
+              <span className={styles.toolIcon}>✥</span>
+              <span>Panorama</span>
+            </button>
+          </div>
         </div>
 
         {/* Right utility pills */}

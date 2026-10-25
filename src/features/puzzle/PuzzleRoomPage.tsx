@@ -328,24 +328,6 @@ export function PuzzleRoomPage(): JSX.Element {
 
   return (
     <div className={styles.page}>
-      {/* Floating Expand Button (shown when sidebar is closed) */}
-      {!isSidebarOpen && (
-        <button
-          type="button"
-          className={styles.sidebarExpandBtn}
-          onClick={() => setIsSidebarOpen(true)}
-          title="Yon panelni ochish"
-          aria-label="Yon panelni ochish"
-        >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <line x1="9" y1="3" x2="9" y2="21" />
-            <polyline points="12 9 15 12 12 15" />
-          </svg>
-          <span>Menyu</span>
-        </button>
-      )}
-
       {/* 1. LEFT SIDEBAR */}
       <aside className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarCollapsed : ""}`}>
         {/* Top row with Back button and Collapse button */}
@@ -589,6 +571,24 @@ export function PuzzleRoomPage(): JSX.Element {
           image={image}
           imageWidthPx={image.naturalWidth}
           imageHeightPx={image.naturalHeight}
+          headerLeading={
+            !isSidebarOpen ? (
+              <button
+                type="button"
+                className={styles.sidebarExpandBtn}
+                onClick={() => setIsSidebarOpen(true)}
+                title="Yon panelni ochish"
+                aria-label="Yon panelni ochish"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <line x1="9" y1="3" x2="9" y2="21" />
+                  <polyline points="13 9 16 12 13 15" />
+                </svg>
+                <span>Menyu</span>
+              </button>
+            ) : undefined
+          }
           mode={sync.game.mode}
           snapEnabled={sync.game.snapEnabled}
           rotationEnabled={sync.game.rotationEnabled}

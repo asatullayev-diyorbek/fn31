@@ -80,33 +80,33 @@
   color: #ffffff;
 }
 
-/* Floating Expand Button (Visible when sidebar is collapsed) */
+/* Expand Button (Embedded in topToolbar when sidebar is collapsed) */
 .sidebarExpandBtn {
-  position: absolute;
-  top: 14px;
-  left: 16px;
-  z-index: 30;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  height: 38px;
+  padding: 0 16px;
   border-radius: 9999px;
-  background: rgba(13, 18, 32, 0.9);
+  background: rgba(13, 18, 32, 0.88);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid #273149;
-  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.12);
   color: #f4f7fc;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
 }
 
 :global([data-theme="light"]) .sidebarExpandBtn {
-  background: rgba(255, 255, 255, 0.93);
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  color: #0f172a;
 }
 
 .sidebarExpandBtn:hover {
@@ -114,7 +114,17 @@
   border-color: #38bdf8;
   color: #ffffff;
   transform: translateY(-1px);
-  box-shadow: 0 12px 28px -4px rgba(0, 119, 255, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 24px -4px rgba(0, 119, 255, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+:global([data-theme="light"]) .sidebarExpandBtn:hover {
+  background: #ffffff;
+  border-color: #0077ff;
+  color: #0077ff;
+}
+
+.sidebarExpandBtn:active {
+  transform: scale(0.96);
 }
 
 /* Back to Dashboard Button */

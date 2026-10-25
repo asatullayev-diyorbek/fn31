@@ -31,6 +31,13 @@
   z-index: 20;
 }
 
+.toolbarLeftSection {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .toolGroup {
   display: inline-flex;
   align-items: center;
