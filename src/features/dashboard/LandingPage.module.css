@@ -933,6 +933,27 @@
   color: #e2e8f0;
 }
 
+.galleryThumbStrip {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+.galleryThumbItem {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.galleryThumbItem:hover {
+  transform: translateY(-3px);
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
 .categoryShowcaseCard {
   background: rgba(15, 23, 42, 0.75);
   backdrop-filter: blur(28px);
@@ -1106,6 +1127,10 @@
 
   .catMeta {
     justify-content: center;
+  }
+
+  .galleryThumbStrip {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 

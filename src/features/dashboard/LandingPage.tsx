@@ -1,64 +1,67 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/puzzle-liquid-hero.png";
+import { fetchGalleryImages, galleryImagePath, type GalleryImage } from "@/features/images/gallery";
+import { mediaUrl } from "@/lib/api";
 import styles from "./LandingPage.module.css";
 
-interface GalleryCategoryPreview {
-  id: string;
-  label: string;
-  icon: string;
-  count: number;
-  description: string;
-  sampleName: string;
+const CATEGORY_ICONS: Record<string, string> = {
+  mushuklar: "🐱",
+  tabiat: "🌲",
+  daryolar: "🌊",
+  shahar: "🏙",
+  hayvonlar: "🦁",
+  sanat: "🎨",
+  minimal: "◻️",
+};
+
+// Editorial copy for the categories this gallery launched with — a nice
+// touch where it exists, never load-bearing: any category without an entry
+// here (including one someone adds later by just dropping a new folder in)
+// still renders correctly with a generic description below.
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  mushuklar: "Yoqimtoy zangori ko'zli, o'ynoqi va momiq mushukchalar",
+  tabiat: "Alp cho'qqilari, oltin kuz o'rmonlari va Yosemite vodiysi",
+  daryolar: "Shovullagan sharsharalar, zumrad kanyonlar va tog' ko'llari",
+  shahar: "Tokio neon tunlari, Parij Eyfel minorasi va Venetsiya",
+  hayvonlar: "Sher, yo'lbars, panda, savanna fillari va qutb ayiqlari",
+};
+
+function galleryImageUrl(image: GalleryImage): string {
+  return mediaUrl(`/gallery/${galleryImagePath(image.imageId)}`);
 }
 
-const CATEGORIES: GalleryCategoryPreview[] = [
-  {
-    id: "mushuklar",
-    label: "Mushuklar",
-    icon: "🐱",
-    count: 10,
-    description: "Yoqimtoy zangori ko'zli, o'ynoqi va momiq mushukchalar",
-    sampleName: "Zangori Mushuk, Quyoshdagi Malla",
-  },
-  {
-    id: "tabiat",
-    label: "Tabiat",
-    icon: "🌲",
-    count: 10,
-    description: "Alp cho'qqilari, oltin kuz o'rmonlari va Yosemite vodiysi",
-    sampleName: "Alp Cho'qqisi, Lavanda Dalalari",
-  },
-  {
-    id: "daryolar",
-    label: "Daryolar",
-    icon: "🌊",
-    count: 10,
-    description: "Shovullagan sharsharalar, zumrad kanyonlar va tog' ko'llari",
-    sampleName: "O'rmon Sharsharasi, Muzlik Ko'li",
-  },
-  {
-    id: "shahar",
-    label: "Shahar",
-    icon: "🏙",
-    count: 10,
-    description: "Tokio neon tunlari, Parij Eyfel minorasi va Venetsiya",
-    sampleName: "Tokio Neon Tuni, London Big Ben",
-  },
-  {
-    id: "hayvonlar",
-    label: "Hayvonlar",
-    icon: "🦁",
-    count: 10,
-    description: "Sher, yo'lbars, panda, savanna fillari va qutb ayiqlari",
-    sampleName: "Sher Qirol, Katta Panda",
-  },
-];
-
 export function LandingPage(): JSX.Element {
-  const [activeCategory, setActiveCategory] = useState<string>("mushuklar");
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>("");
 
-  const currentCat = CATEGORIES.find((c) => c.id === activeCategory) ?? CATEGORIES[0]!;
+  useEffect(() => {
+    let active = true;
+    fetchGalleryImages()
+      .then((images) => {
+        if (!active) return;
+        setGalleryImages(images);
+        setActiveCategory((prev) => prev || images[0]?.categorySlug || "");
+      })
+      .catch(() => {
+        // The showcase below degrades gracefully to "no categories yet" — not worth a user-facing error on the landing page.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const categories = useMemo(() => {
+    const bySlug = new Map<string, { slug: string; label: string; images: GalleryImage[] }>();
+    for (const image of galleryImages) {
+      const entry = bySlug.get(image.categorySlug) ?? { slug: image.categorySlug, label: image.category, images: [] };
+      entry.images.push(image);
+      bySlug.set(image.categorySlug, entry);
+    }
+    return [...bySlug.values()];
+  }, [galleryImages]);
+
+  const currentCat = categories.find((c) => c.slug === activeCategory) ?? categories[0];
 
   return (
     <div className={styles.page}>
@@ -218,7 +221,7 @@ export function LandingPage(): JSX.Element {
       {/* 2. STATS BAR */}
       <section className={styles.statsBar} aria-label="Ilova imkoniyatlari">
         <div className={styles.statCard}>
-          <div className={styles.statNumber}>50+</div>
+          <div className={styles.statNumber}>{galleryImages.length > 0 ? `${galleryImages.length}+` : "50+"}</div>
           <div className={styles.statLabel}>Tiniq PNG rasmlar</div>
           <div className={styles.statSub}>2000px o&apos;lchamli to&apos;plamlar</div>
         </div>
@@ -270,7 +273,7 @@ export function LandingPage(): JSX.Element {
             </div>
             <h3>Rasm va bo&apos;laklarni tanlang</h3>
             <p>
-              50 ta tayyor tiniq PNG rasmlardan tanlang yoki o&apos;z rasmingizni yuklang. Bo&apos;laklar sonini moslang (20–100).
+              {galleryImages.length || 50} ta tayyor tiniq PNG rasmlardan tanlang yoki o&apos;z rasmingizni yuklang. Bo&apos;laklar sonini moslang (20–100).
             </p>
           </div>
 
@@ -343,50 +346,68 @@ export function LandingPage(): JSX.Element {
         </div>
       </section>
 
-      {/* 5. 50 CRISP PNG GALLERY SHOWCASE */}
-      <section className={styles.section} aria-labelledby="gallery-title">
-        <div className={styles.sectionHeader}>
-          <span className={styles.sectionTag}>50 ta tiniq rasm</span>
-          <h2 id="gallery-title" className={styles.sectionTitle}>
-            Pazl uchun maxsus tanlangan to&apos;plamlar
-          </h2>
-          <p className={styles.sectionSubtitle}>
-            Rangdor, detallarga boy va 2000px yo&apos;qotishsiz PNG formatida.
-          </p>
-        </div>
+      {/* 5. REAL GALLERY SHOWCASE — sourced live from backend/gallery/, never hardcoded */}
+      {categories.length > 0 && currentCat && (
+        <section className={styles.section} aria-labelledby="gallery-title">
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionTag}>{galleryImages.length} ta tiniq rasm</span>
+            <h2 id="gallery-title" className={styles.sectionTitle}>
+              Pazl uchun maxsus tanlangan to&apos;plamlar
+            </h2>
+            <p className={styles.sectionSubtitle}>
+              Rangdor, detallarga boy va 2000px yo&apos;qotishsiz PNG formatida.
+            </p>
+          </div>
 
-        <div className={styles.galleryNav}>
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              className={`${styles.galleryTab} ${activeCategory === cat.id ? styles.galleryTabActive : ""}`}
-              onClick={() => setActiveCategory(cat.id)}
-            >
-              <span>{cat.icon}</span>
-              <span>{cat.label}</span>
-              <span className={styles.tabCount}>{cat.count}</span>
-            </button>
-          ))}
-        </div>
+          <div className={styles.galleryNav}>
+            {categories.map((cat) => (
+              <button
+                key={cat.slug}
+                type="button"
+                className={`${styles.galleryTab} ${activeCategory === cat.slug ? styles.galleryTabActive : ""}`}
+                onClick={() => setActiveCategory(cat.slug)}
+              >
+                <span>{CATEGORY_ICONS[cat.slug] ?? "🧩"}</span>
+                <span>{cat.label}</span>
+                <span className={styles.tabCount}>{cat.images.length}</span>
+              </button>
+            ))}
+          </div>
 
-        <div className={styles.categoryShowcaseCard}>
-          <div className={styles.catLeft}>
-            <div className={styles.catIconLarge}>{currentCat.icon}</div>
-            <div>
-              <h3 className={styles.catTitle}>{currentCat.label} to&apos;plami</h3>
-              <p className={styles.catDesc}>{currentCat.description}</p>
-              <div className={styles.catMeta}>
-                <span>📸 10 ta eng sara 2000px PNG suratlar</span>
-                <span>🧩 {currentCat.sampleName}</span>
+          <div className={styles.categoryShowcaseCard}>
+            <div className={styles.catLeft}>
+              <div className={styles.catIconLarge}>{CATEGORY_ICONS[currentCat.slug] ?? "🧩"}</div>
+              <div>
+                <h3 className={styles.catTitle}>{currentCat.label} to&apos;plami</h3>
+                <p className={styles.catDesc}>
+                  {CATEGORY_DESCRIPTIONS[currentCat.slug] ?? `${currentCat.images.length} ta yuqori sifatli, 2000px PNG rasm`}
+                </p>
+                <div className={styles.catMeta}>
+                  <span>📸 {currentCat.images.length} ta eng sara 2000px PNG suratlar</span>
+                  {currentCat.images.length > 0 && (
+                    <span>🧩 {currentCat.images.slice(0, 2).map((img) => img.label).join(", ")}</span>
+                  )}
+                </div>
               </div>
             </div>
+            <Link to="/create" className={styles.catActionBtn}>
+              Shu to&apos;plamdan boshlash →
+            </Link>
           </div>
-          <Link to="/create" className={styles.catActionBtn}>
-            Shu to&apos;plamdan boshlash →
-          </Link>
-        </div>
-      </section>
+
+          <div className={styles.galleryThumbStrip}>
+            {currentCat.images.slice(0, 6).map((image) => (
+              <img
+                key={image.imageId}
+                src={galleryImageUrl(image)}
+                alt={image.label}
+                loading="lazy"
+                className={styles.galleryThumbItem}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 6. BOTTOM BANNER */}
       <section className={styles.ctaBanner}>
