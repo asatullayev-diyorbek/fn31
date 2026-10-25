@@ -179,6 +179,10 @@ export class PuzzleEngine {
     this.renderer.setViewport(viewport);
   }
 
+  setReferenceOverlayOpacity(opacity: number): void {
+    this.renderer.setReferenceOverlayOpacity(opacity);
+  }
+
   getGroupId(pieceId: number): string | undefined {
     return getGroupId(this.groups, pieceId);
   }

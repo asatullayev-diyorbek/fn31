@@ -23,12 +23,20 @@ export function SiteHeader(): JSX.Element {
           </li>
         </ul>
         {user ? (
-          <Link
-            to="/dashboard"
-            className={`${styles.navDashboardBtn} ${isDashboard ? styles.activeDashboardBtn : ""}`}
-          >
-            Boshqaruv paneli
-          </Link>
+          <div className={styles.userNavGroup}>
+            <Link
+              to="/dashboard"
+              className={`${styles.navDashboardBtn} ${isDashboard ? styles.activeDashboardBtn : ""}`}
+            >
+              Boshqaruv paneli
+            </Link>
+            <div className={styles.navAvatar} title={user.displayName} aria-label={user.displayName}>
+              <span className={styles.navAvatarInitial}>
+                {user.displayName.charAt(0).toUpperCase()}
+              </span>
+              <span className={styles.navAvatarDot} />
+            </div>
+          </div>
         ) : (
           <Link to="/login" className="btn btn-primary">
             <span aria-hidden="true">✈</span> Telegram orqali kirish

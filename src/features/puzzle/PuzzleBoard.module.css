@@ -5,6 +5,7 @@
   width: 100%;
   height: 100%;
   min-height: 480px;
+  gap: 12px;
 }
 
 .wrapperFullscreen {
@@ -13,33 +14,93 @@
   width: 100vw !important;
   height: 100vh !important;
   z-index: 99999 !important;
-  background: var(--color-bg) !important;
+  background: #080b14 !important;
+  padding: 16px !important;
   margin: 0 !important;
   border-radius: 0 !important;
 }
 
+/* TOP CANVAS TOOLBAR */
+.topToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  flex-wrap: wrap;
+  z-index: 20;
+}
+
+.toolGroup {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  background: rgba(13, 18, 32, 0.82);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid #273149;
+  border-radius: 9999px;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  gap: 3px;
+}
+
+.toolBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #9ba8c0;
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toolBtn:hover {
+  color: #f4f7fc;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.toolBtnActive {
+  background: #0077ff !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(0, 119, 255, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.toolIcon {
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* CANVAS CONTAINER */
 .canvasContainer {
   position: relative;
   flex: 1;
   width: 100%;
   height: 100%;
-  min-height: 400px;
-  border-radius: var(--radius-xl);
+  min-height: 420px;
+  border-radius: 20px;
   background:
-    radial-gradient(circle at 50% 50%, rgba(30, 48, 80, 0.4), transparent 70%),
-    radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
-    #0a0e1c;
+    radial-gradient(circle at 50% 50%, rgba(20, 32, 58, 0.45) 0%, transparent 75%),
+    radial-gradient(rgba(255, 255, 255, 0.06) 1.2px, transparent 1.2px) 0 0 / 28px 28px,
+    #090e1b;
   overflow: hidden;
-  border: 1px solid var(--liquid-glass-border);
-  box-shadow: var(--liquid-glass-shine), var(--liquid-glass-shadow);
+  border: 1px solid #273149;
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.08);
   touch-action: none;
   user-select: none;
   transition: border-radius 0.25s ease;
 }
 
 .wrapperFullscreen .canvasContainer {
-  border-radius: 0;
-  border: none;
+  border-radius: 12px;
 }
 
 .canvas {
@@ -64,25 +125,81 @@
   cursor: grabbing !important;
 }
 
-/* Apple Floating Island Controls Bar */
+/* TOP-RIGHT MINIMAP PREVIEW WIDGET */
+.minimapWidget {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 150px;
+  height: 100px;
+  border-radius: 14px;
+  background: #080c18;
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  z-index: 15;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.minimapWidget:hover {
+  transform: scale(1.03);
+  border-color: #38bdf8;
+}
+
+.minimapImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0.88;
+}
+
+.minimapViewportBox {
+  position: absolute;
+  border: 2px solid #38bdf8;
+  border-radius: 4px;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.65);
+  background: rgba(56, 189, 248, 0.12);
+  pointer-events: none;
+  transition: all 0.08s ease-out;
+}
+
+.minimapBadge {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(8, 12, 24, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* BOTTOM FLOATING ISLAND TOOLBAR */
 .floatingControls {
   position: absolute;
-  bottom: 24px;
+  bottom: 22px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background: rgba(15, 22, 38, 0.78);
-  backdrop-filter: blur(32px) saturate(210%);
-  -webkit-backdrop-filter: blur(32px) saturate(210%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-full);
+  gap: 5px;
+  padding: 6px 12px;
+  background: rgba(13, 18, 32, 0.88);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid #273149;
+  border-radius: 9999px;
   box-shadow:
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.38),
-    0 20px 48px -8px rgba(0, 0, 0, 0.55),
-    0 4px 12px rgba(0, 0, 0, 0.3);
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
+    0 16px 40px -6px rgba(0, 0, 0, 0.65),
+    0 4px 12px rgba(0, 0, 0, 0.4);
   z-index: 20;
   pointer-events: auto;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -90,15 +207,15 @@
 }
 
 .floatingControls:hover {
-  background: rgba(18, 27, 46, 0.88);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(16, 23, 40, 0.94);
+  border-color: rgba(255, 255, 255, 0.24);
 }
 
 .controlDivider {
   width: 1px;
-  height: 20px;
-  background: rgba(255, 255, 255, 0.16);
-  margin: 0 2px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 0 4px;
 }
 
 .controlBtn {
@@ -107,20 +224,20 @@
   justify-content: center;
   gap: 6px;
   height: 36px;
-  padding: 0 12px;
-  border-radius: var(--radius-full);
+  padding: 0 14px;
+  border-radius: 9999px;
   border: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f4f7fc;
   font-size: 13px;
-  font-weight: 550;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 
 .controlBtn:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
   transform: translateY(-1px);
 }
@@ -129,101 +246,139 @@
   transform: scale(0.95);
 }
 
-.controlBtnActive {
-  background: var(--color-accent-liquid) !important;
-  color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 0 16px rgba(0, 113, 227, 0.6) !important;
-}
-
 .iconControlBtn {
   width: 36px;
   height: 36px;
-  padding: 0;
-  border-radius: var(--radius-full);
-  display: inline-flex;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  color: #9ba8c0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  border: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--color-text);
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
 }
 
 .iconControlBtn:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
-  transform: scale(1.06);
+  transform: translateY(-1px);
 }
 
 .iconControlBtn:active {
   transform: scale(0.92);
 }
 
-.iconControlBtnActive {
-  background: var(--color-accent-liquid) !important;
-  color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 0 16px rgba(0, 113, 227, 0.5) !important;
-}
-
 .zoomIndicator {
-  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-size: 13px;
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text-muted);
-  min-width: 44px;
+  color: #f4f7fc;
+  min-width: 42px;
   text-align: center;
-  padding: 0 4px;
-  user-select: none;
 }
 
-/* Floating Hint Badge */
-.floatingHint {
-  position: absolute;
-  top: 16px;
-  left: 20px;
+/* REFERENCE IMAGE MODAL */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 7, 14, 0.82);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  background: rgba(12, 17, 30, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-full);
-  font-size: 12px;
-  color: var(--color-text-muted);
-  pointer-events: none;
-  z-index: 10;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  justify-content: center;
+  z-index: 999999;
+  padding: 24px;
 }
 
-.hintKbd {
+.referenceModal {
+  max-width: 820px;
+  width: 100%;
+  background: #0d1220;
+  border: 1px solid #273149;
+  border-radius: 24px;
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.modalCloseBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ba8c0;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.modalCloseBtn:hover {
   background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  padding: 2px 6px;
-  font-family: inherit;
-  font-size: 11px;
-  color: var(--color-text);
-  font-weight: 600;
+  color: #ffffff;
 }
 
-@media (max-width: 768px) {
-  .floatingControls {
-    bottom: 16px;
-    gap: 4px;
-    padding: 5px 8px;
+.referenceImgContainer {
+  max-height: 60vh;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #080b14;
+}
+
+.referenceImg {
+  width: 100%;
+  height: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  display: block;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #9ba8c0;
+}
+
+@media (max-width: 860px) {
+  .topToolbar {
+    gap: 8px;
   }
-  .floatingHint {
-    display: none;
-  }
-  .controlBtn {
-    padding: 0 8px;
+  .toolBtn {
+    padding: 6px 12px;
     font-size: 12px;
+  }
+  .minimapWidget {
+    width: 110px;
+    height: 75px;
+    top: 10px;
+    right: 10px;
   }
 }
