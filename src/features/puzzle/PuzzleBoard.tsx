@@ -24,7 +24,11 @@ export interface PuzzleBoardProps {
   onDragStart?: (pieceIds: readonly number[]) => void;
   onDragMove?: (pieceIds: readonly number[], positions: ReadonlyMap<number, PiecePosition>) => void;
   onEngineReady?: (engine: PuzzleEngine) => void;
+  /** Fired (already throttled) on pointer movement over the board, in world/image-space coordinates — the sync layer broadcasts this as live cursor presence. */
+  onCursorMove?: (worldX: number, worldY: number) => void;
 }
+
+const CURSOR_BROADCAST_THROTTLE_MS = 50; // ~20 Hz ceiling, same budget as piece live-drag (see src/app/config.ts)
 
 export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -54,6 +58,7 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
   const touchesRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const savedViewportRef = useRef<import("@/features/puzzle/rendering/types").Viewport | null>(null);
   const savedPositionsRef = useRef<Map<number, PiecePosition> | null>(null);
+  const lastCursorBroadcastAtRef = useRef(0);
 
   const updateMetrics = useCallback(() => {
     const engine = engineRef.current;
@@ -235,6 +240,15 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
     (event: React.PointerEvent<HTMLCanvasElement>) => {
       const point = toCanvasPoint(event);
 
+      if (props.onCursorMove && engineRef.current) {
+        const now = performance.now();
+        if (now - lastCursorBroadcastAtRef.current >= CURSOR_BROADCAST_THROTTLE_MS) {
+          lastCursorBroadcastAtRef.current = now;
+          const world = engineRef.current.screenToWorld(point.x, point.y);
+          props.onCursorMove(world.x, world.y);
+        }
+      }
+
       if (touchesRef.current.size === 2 && touchesRef.current.has(event.pointerId)) {
         const previous = touchesRef.current.get(event.pointerId)!;
         touchesRef.current.set(event.pointerId, point);
@@ -278,7 +292,8 @@ export function PuzzleBoard(props: PuzzleBoardProps): JSX.Element {
 
       engineRef.current?.onPointerMove(event.pointerId, point.x, point.y);
     },
-    [toCanvasPoint, updateMetrics],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- depending on the whole `props` object (the lint rule's suggested fix) would recreate this callback on every unrelated prop change; props.onCursorMove already covers the one prop this callback actually reads
+    [toCanvasPoint, updateMetrics, props.onCursorMove],
   );
 
   const handlePointerUp = useCallback(

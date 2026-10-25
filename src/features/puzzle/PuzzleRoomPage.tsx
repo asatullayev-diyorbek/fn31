@@ -8,9 +8,12 @@ import { loadPuzzleImage } from "@/features/images/loadPuzzleImage";
 import { galleryLabelFromId, isGalleryImageId } from "@/features/images/gallery";
 import { generatePuzzleGeometry, type GeometryResult } from "@/features/puzzle/geometry";
 import { PuzzleBoard } from "./PuzzleBoard";
+import { CursorOverlay, type RemoteCursor } from "./CursorOverlay";
 import type { PuzzleEngine } from "@/features/puzzle/engine/PuzzleEngine";
 import type { PiecePosition } from "@/features/puzzle/interactions";
 import styles from "./PuzzleRoomPage.module.css";
+
+const CURSOR_STALE_AFTER_MS = 10000;
 
 function formatCreatedDate(isoDateString?: string): string {
   if (!isoDateString) return "25.10.2026, 14:32";
@@ -67,6 +70,7 @@ export function PuzzleRoomPage(): JSX.Element {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const completionShownRef = useRef(false);
+  const [remoteCursors, setRemoteCursors] = useState<Map<string, RemoteCursor & { updatedAt: number }>>(new Map());
 
   const engineRef = useRef<PuzzleEngine | null>(null);
 
@@ -81,6 +85,57 @@ export function PuzzleRoomPage(): JSX.Element {
       socket.off("room:deleted", onRoomDeleted);
     };
   }, [navigate]);
+
+  // Other participants' live cursors — ephemeral, never persisted (see backend's cursor:move/cursor:moved relay).
+  useEffect(() => {
+    const socket = getSocket();
+    const onCursorMoved = (event: { uid: string; displayName: string; x: number; y: number }) => {
+      if (event.uid === sync.myUid) return;
+      setRemoteCursors((prev) => {
+        const next = new Map(prev);
+        next.set(event.uid, { uid: event.uid, displayName: event.displayName, x: event.x, y: event.y, updatedAt: Date.now() });
+        return next;
+      });
+    };
+    const onCursorLeft = (event: { uid: string }) => {
+      setRemoteCursors((prev) => {
+        if (!prev.has(event.uid)) return prev;
+        const next = new Map(prev);
+        next.delete(event.uid);
+        return next;
+      });
+    };
+    socket.on("cursor:moved", onCursorMoved);
+    socket.on("cursor:left", onCursorLeft);
+    return () => {
+      socket.off("cursor:moved", onCursorMoved);
+      socket.off("cursor:left", onCursorLeft);
+    };
+  }, [sync.myUid]);
+
+  // A dropped connection that never sent "cursor:left" (network loss rather
+  // than a clean disconnect) shouldn't leave a cursor frozen on screen forever.
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setRemoteCursors((prev) => {
+        const cutoff = Date.now() - CURSOR_STALE_AFTER_MS;
+        let changed = false;
+        const next = new Map(prev);
+        for (const [uid, cursor] of prev) {
+          if (cursor.updatedAt < cutoff) {
+            next.delete(uid);
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }, 3000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  function handleCursorMove(worldX: number, worldY: number): void {
+    getSocket().emit("cursor:move", { roomId, x: worldX, y: worldY });
+  }
 
   async function handleDeleteRoom(): Promise<void> {
     setIsDeleting(true);
@@ -549,7 +604,9 @@ export function PuzzleRoomPage(): JSX.Element {
           onDragStart={handleDragStart}
           onDragMove={handleDragMove}
           onCommitPositions={handleCommitPositions}
+          onCursorMove={handleCursorMove}
         />
+        <CursorOverlay cursors={remoteCursors} engineRef={engineRef} />
       </main>
 
       {/* 3. SETTINGS MODAL */}

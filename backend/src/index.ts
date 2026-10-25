@@ -58,6 +58,7 @@ io.use(async (socket, next) => {
     const { payload } = await jwtVerify(supplied, jwtKey);
     if (!payload.sub) return next(new Error("unauthorized"));
     socket.data.uid = payload.sub;
+    socket.data.displayName = typeof payload.displayName === "string" ? payload.displayName : "O'yinchi";
     next();
   } catch {
     next(new Error("unauthorized"));
@@ -483,6 +484,32 @@ io.on("connection", (socket) => {
   socket.on("piece:move", async (event: { roomId: string; pieceId: number; x: number; y: number; rotation: number }) => {
     if (event?.roomId && Number.isInteger(event.pieceId) && (await isParticipant(event.roomId, socket.data.uid))) {
       socket.to(`room:${event.roomId}`).emit("piece:moved", { ...event, uid: socket.data.uid });
+    }
+  });
+  // Ephemeral cursor presence — never persisted, just relayed to the rest of
+  // the room so participants can see where everyone else is pointing, the
+  // same "piece:move"/"piece:moved" fire-and-forget pattern above.
+  socket.on("cursor:move", async (event: { roomId: string; x: number; y: number }) => {
+    if (
+      event?.roomId &&
+      Number.isFinite(event.x) &&
+      Number.isFinite(event.y) &&
+      (await isParticipant(event.roomId, socket.data.uid))
+    ) {
+      socket.to(`room:${event.roomId}`).emit("cursor:moved", {
+        uid: socket.data.uid,
+        displayName: socket.data.displayName,
+        x: event.x,
+        y: event.y,
+      });
+    }
+  });
+  socket.on("disconnecting", () => {
+    // A dropped tab/connection should clear its cursor immediately on every
+    // room it was in, rather than leaving a stale marker for other
+    // participants until it ages out client-side.
+    for (const room of socket.rooms) {
+      if (room.startsWith("room:")) socket.to(room).emit("cursor:left", { uid: socket.data.uid });
     }
   });
 });

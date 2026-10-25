@@ -202,6 +202,16 @@ export class PuzzleEngine {
     return this.renderer.hitTest(screenX, screenY);
   }
 
+  /** World (image-space) coordinates for a CSS-pixel point relative to the canvas — the same space piece positions live in, so it's meaningful to any participant regardless of their own zoom/pan. */
+  screenToWorld(screenX: number, screenY: number): { x: number; y: number } {
+    return this.renderer.screenToWorld(screenX, screenY);
+  }
+
+  /** The inverse of screenToWorld — where a world-space point currently lands on screen, given this client's own zoom/pan. */
+  worldToScreen(worldX: number, worldY: number): { x: number; y: number } {
+    return this.renderer.worldToScreen(worldX, worldY);
+  }
+
   resizeCanvas(): void {
     this.renderer.syncBackingStoreSize();
   }
