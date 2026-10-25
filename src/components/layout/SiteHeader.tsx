@@ -1,16 +1,16 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 import styles from "./SiteHeader.module.css";
 
 export function SiteHeader(): JSX.Element {
   const { user } = useAuth();
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith("/dashboard");
 
   return (
     <header className={styles.header}>
       <Link to="/" className={styles.brand} aria-label="PuzzleTogether bosh sahifasi">
-        <span className={styles.logo} aria-hidden="true">
-          ✦
-        </span>
+        <img src="/logo.png" alt="PuzzleTogether" className={styles.logoImg} />
         <span>Puzzle<span className={styles.brandAccent}>Together</span></span>
       </Link>
       <nav className={styles.nav} aria-label="Asosiy navigatsiya">
@@ -23,7 +23,10 @@ export function SiteHeader(): JSX.Element {
           </li>
         </ul>
         {user ? (
-          <Link to="/dashboard" className="btn btn-secondary">
+          <Link
+            to="/dashboard"
+            className={`${styles.navDashboardBtn} ${isDashboard ? styles.activeDashboardBtn : ""}`}
+          >
             Boshqaruv paneli
           </Link>
         ) : (

@@ -54,6 +54,9 @@ export interface Room {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   expiresAt: Timestamp | null;
+  imageId?: string;
+  pieceCount?: number;
+  participantCount?: number;
 }
 
 /** rooms/{roomId}/participants/{uid} */

@@ -55,12 +55,112 @@ function state(roomId: string): unknown | null {
   return { room: { roomId: room.id, ownerUid: room.owner_id, status: room.status, visibility: room.visibility, inviteCode: room.id, currentGameId: room.current_game_id, createdAt: room.created_at, updatedAt: room.updated_at, expiresAt: null }, game: game && { gameId: game.id, roomId, mode: game.mode, imageId: game.image_id, pieceCount: game.piece_count, columns: game.columns, rows: game.rows, geometrySeed: game.geometry_seed, geometryVersion: game.geometry_version, snapEnabled: Boolean(game.snap_enabled), rotationEnabled: Boolean(game.rotation_enabled), snapToleranceRatio: game.snap_tolerance_ratio, stateVersion: game.state_version, progress: game.progress, completedAt: (game.completed_at as string | null) ?? null, createdAt: game.created_at, updatedAt: game.updated_at }, participants, pieces };
 }
 
+async function sendTelegramMessage(chatId: string | number, text: string): Promise<boolean> {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) return false;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("sendTelegramMessage error:", err);
+    return false;
+  }
+}
+
 app.get("/health", (_req, res) => { db.prepare("select 1").get(); res.json({ ok: true, service: "puzzletogether-api" }); });
 app.get("/api/auth/session", required, (_req, res) => res.json({ user: res.locals.user }));
 app.post("/api/auth/transactions", (_req, res) => { const id = randomBytes(24).toString("base64url"); const expiresAtMs = Date.now() + 300000; db.prepare("insert into auth_transactions (id,status,expires_at) values (?,'pending',?)").run(id, expiresAtMs); res.status(201).json({ transactionId: id, expiresAtMs }); });
 app.get("/api/auth/transactions/:id", (req, res) => { const row = db.prepare("select status, expires_at from auth_transactions where id=?").get(req.params.id) as { status: string; expires_at: number } | undefined; if (!row) return fail(res, 404, "transaction not found"); if (row.status === "pending" && row.expires_at < Date.now()) { db.prepare("update auth_transactions set status='expired' where id=?").run(req.params.id); row.status = "expired"; } return res.json({ status: row.status, expiresAtMs: row.expires_at }); });
-app.post("/api/auth/transactions/:id/complete", async (req, res) => { const row = db.prepare("select * from auth_transactions where id=?").get(req.params.id) as Record<string, unknown> | undefined; if (!row || row.status !== "verified" || Number(row.expires_at) < Date.now()) return fail(res, 409, "Telegram tasdiqlashi kutilmoqda."); const telegramId = String(row.telegram_user_id), displayName = String(row.display_name || "O'yinchi"), user = { uid: `tg_${telegramId}`, displayName, telegramUsername: typeof row.telegram_username === "string" ? row.telegram_username : undefined }; db.prepare("insert into users (id,telegram_id,display_name,telegram_username,created_at) values (?,?,?,?,?) on conflict(id) do update set display_name=excluded.display_name,telegram_username=excluded.telegram_username").run(user.uid, telegramId, displayName, user.telegramUsername ?? null, now()); db.prepare("update auth_transactions set status='completed' where id=?").run(req.params.id); res.json({ token: await token(user), user }); });
-app.post("/webhooks/telegram", (req, res) => { if (!process.env.TELEGRAM_WEBHOOK_SECRET || req.get("X-Telegram-Bot-Api-Secret-Token") !== process.env.TELEGRAM_WEBHOOK_SECRET) return fail(res, 401, "unauthorized"); const message = req.body?.message, id = typeof message?.text === "string" ? message.text.match(/^\/start\s+([A-Za-z0-9_-]+)$/)?.[1] : undefined; if (id && message?.from?.id) { const display = [message.from.first_name, message.from.last_name].filter(Boolean).join(" ") || "Telegram foydalanuvchisi"; db.prepare("update auth_transactions set status='verified',telegram_user_id=?,telegram_username=?,display_name=? where id=? and status='pending' and expires_at>=?").run(String(message.from.id), message.from.username ?? null, display, id, Date.now()); io.to(`auth:${id}`).emit("auth:verified", { transactionId: id }); } res.sendStatus(200); });
+app.post("/api/auth/transactions/:id/complete", async (req, res) => {
+  const row = db.prepare("select * from auth_transactions where id=?").get(req.params.id) as Record<string, unknown> | undefined;
+  if (!row || row.status !== "verified" || Number(row.expires_at) < Date.now()) return fail(res, 409, "Telegram tasdiqlashi kutilmoqda.");
+  const telegramId = String(row.telegram_user_id), displayName = String(row.display_name || "O'yinchi");
+  const user = { uid: `tg_${telegramId}`, displayName, telegramUsername: typeof row.telegram_username === "string" ? row.telegram_username : undefined };
+  const existing = db.prepare("select id from users where id=?").get(user.uid);
+  const isNewUser = !existing;
+
+  db.prepare("insert into users (id,telegram_id,display_name,telegram_username,created_at) values (?,?,?,?,?) on conflict(id) do update set display_name=excluded.display_name,telegram_username=excluded.telegram_username").run(user.uid, telegramId, displayName, user.telegramUsername ?? null, now());
+  db.prepare("update auth_transactions set status='completed' where id=?").run(req.params.id);
+
+  // Send Telegram message to user
+  if (isNewUser) {
+    void sendTelegramMessage(
+      telegramId,
+      `🎉 <b>Xush kelibsiz, ${displayName}!</b>\n\nSiz <b>PuzzleTogether</b> platformasida muvaffaqiyatli ro'yxatdan o'tdingiz. Endi xona yaratib yoki do'stlaringiz taklifnomasi bilan birga real vaqtda pazl yig'ishingiz mumkin! 🧩✨`,
+    );
+    const adminId = process.env.ADMIN_TELEGRAM_ID;
+    if (adminId) {
+      void sendTelegramMessage(
+        adminId,
+        `🔔 <b>Yangi foydalanuvchi ro'yxatdan o'tdi:</b>\n\n• Ism: <b>${displayName}</b>\n• Telegram ID: <code>${telegramId}</code>\n• Username: ${user.telegramUsername ? "@" + user.telegramUsername : "mavjud emas"}\n• Vaqt: ${now()}`,
+      );
+    }
+  } else {
+    void sendTelegramMessage(
+      telegramId,
+      `🔐 <b>Tizimga muvaffaqiyatli kirdingiz!</b>\n\nXush kelibsiz, <b>${displayName}</b>. Brauzerda sessiyangiz faollashtirildi. 🧩`,
+    );
+  }
+
+  res.json({ token: await token(user), user });
+});
+
+app.post("/webhooks/telegram", async (req, res) => {
+  const secretHeader = req.get("X-Telegram-Bot-Api-Secret-Token");
+  if (!process.env.TELEGRAM_WEBHOOK_SECRET || secretHeader !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+    return fail(res, 401, "unauthorized");
+  }
+
+  const message = req.body?.message;
+  const chatId = message?.chat?.id ?? message?.from?.id;
+  const text = typeof message?.text === "string" ? message.text.trim() : "";
+  const display = [message?.from?.first_name, message?.from?.last_name].filter(Boolean).join(" ") || "O'yinchi";
+
+  if (!chatId) {
+    return res.sendStatus(200);
+  }
+
+  // Pure /start command without payload
+  if (text === "/start") {
+    await sendTelegramMessage(
+      chatId,
+      `👋 <b>Assalomu alaykum, ${display}!</b>\n\n🧩 <b>PuzzleTogether</b> — real vaqt rejimida do'stlar bilan birgalikda pazl yig'ish platformasi.\n\nKirish uchun saytga o'ting va <i>"Telegram orqali kirish"</i> tugmasini bosing!`,
+    );
+    return res.sendStatus(200);
+  }
+
+  const id = text.match(/^\/start\s+([A-Za-z0-9_-]+)$/)?.[1];
+  if (id && message?.from?.id) {
+    const telegramId = String(message.from.id);
+    const username = message.from.username ?? null;
+
+    const row = db.prepare("select status, expires_at from auth_transactions where id=?").get(id) as { status: string; expires_at: number } | undefined;
+
+    if (!row) {
+      await sendTelegramMessage(chatId, `⚠️ <b>Kirish havolasi topilmadi.</b>\n\nIltimos, saytdan qaytadan <i>"Telegram orqali kirish"</i> tugmasini bosing.`);
+      return res.sendStatus(200);
+    }
+
+    if (row.status !== "pending" || row.expires_at < Date.now()) {
+      await sendTelegramMessage(chatId, `⏳ <b>Ushbu kirish havolasining amal qilish muddati tugagan.</b>\n\nIltimos, saytdan qayta urinib ko'ring.`);
+      return res.sendStatus(200);
+    }
+
+    db.prepare("update auth_transactions set status='verified',telegram_user_id=?,telegram_username=?,display_name=? where id=? and status='pending' and expires_at>=?").run(telegramId, username, display, id, Date.now());
+    io.to(`auth:${id}`).emit("auth:verified", { transactionId: id });
+
+    await sendTelegramMessage(
+      chatId,
+      `✅ <b>Kirishingiz tasdiqlandi!</b>\n\nAssalomu alaykum, <b>${display}</b>! Endi brauzeringizga qaytib, o'yinni davom ettirishingiz mumkin. 🧩`,
+    );
+  }
+
+  res.sendStatus(200);
+});
 
 // The client's requested piece count (25-500, see src/app/config.ts) is only an input to
 // computeGridLayout's sqrt+round grid sizing, so the actual cols*rows total it sends here can
@@ -70,7 +170,7 @@ app.post("/webhooks/telegram", (req, res) => { if (!process.env.TELEGRAM_WEBHOOK
 const gameSchema = z.object({ gameId: z.string(), mode: z.enum(["free", "classic"]), imageId: z.string(), pieceCount: z.number().int().min(16).max(560), columns: z.number().int(), rows: z.number().int(), geometrySeed: z.string(), geometryVersion: z.number().int(), snapEnabled: z.boolean(), rotationEnabled: z.boolean(), snapToleranceRatio: z.number() });
 const pieceSchema = z.object({ pieceId: z.number().int(), x: z.number(), y: z.number(), rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]), groupId: z.string(), lockedBy: z.null(), lockExpiresAt: z.null() });
 app.post("/api/rooms", required, (req, res) => { const parsed = z.object({ roomId: z.string().min(6).max(64), game: gameSchema, visibility: z.enum(["private", "unlisted"]), pieces: z.array(pieceSchema) }).safeParse(req.body); if (!parsed.success) return fail(res, 400, "invalid room payload"); const { roomId, game, visibility, pieces } = parsed.data, user = res.locals.user as User, stamp = now(); try { db.exec("begin"); db.prepare("insert into rooms values (?,?,?,?,?,?,?)").run(roomId, user.uid, "open", visibility, game.gameId, stamp, stamp); db.prepare("insert into games values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").run(game.gameId, roomId, game.mode, game.imageId, game.pieceCount, game.columns, game.rows, game.geometrySeed, game.geometryVersion, Number(game.snapEnabled), Number(game.rotationEnabled), game.snapToleranceRatio, 0, 0, stamp, stamp, null); db.prepare("insert into participants values (?,?,?,?,?,?,?)").run(roomId, user.uid, user.displayName, "owner", stamp, stamp, "online"); const chunks = new Map<string, Piece[]>(); for (const piece of pieces) { const chunkId = `c${Math.floor(piece.pieceId / 50)}`; chunks.set(chunkId, [...(chunks.get(chunkId) ?? []), piece]); } const insert = db.prepare("insert into pieces values (?,?,?,?)"); for (const [chunkId, chunk] of chunks) insert.run(roomId, game.gameId, chunkId, JSON.stringify(Object.fromEntries(chunk.map((piece) => [piece.pieceId, piece])))); db.exec("commit"); } catch (error) { db.exec("rollback"); throw error; } res.status(201).json({ roomId, gameId: game.gameId }); });
-app.get("/api/rooms/mine", required, (_req, res) => { const user = res.locals.user as User; res.json({ rooms: db.prepare("select id as roomId,owner_id as ownerUid,status,visibility,id as inviteCode,current_game_id as currentGameId,created_at as createdAt,updated_at as updatedAt,null as expiresAt from rooms where owner_id=? order by created_at desc").all(user.uid) }); });
+app.get("/api/rooms/mine", required, (_req, res) => { const user = res.locals.user as User; res.json({ rooms: db.prepare("select r.id as roomId, r.owner_id as ownerUid, r.status, r.visibility, r.id as inviteCode, r.current_game_id as currentGameId, r.created_at as createdAt, r.updated_at as updatedAt, null as expiresAt, g.image_id as imageId, g.piece_count as pieceCount, (select count(*) from participants p where p.room_id = r.id) as participantCount from rooms r left join games g on g.room_id = r.id and g.id = r.current_game_id where r.owner_id = ? order by r.created_at desc").all(user.uid) }); });
 app.post("/api/rooms/:roomId/join", required, (req, res) => { const roomId = String(req.params.roomId); const user = res.locals.user as User; if (!state(roomId)) return fail(res, 404, "Xona topilmadi. Havolani tekshiring."); const stamp = now(); db.prepare("insert into participants values (?,?,?,?,?,?,?) on conflict(room_id,uid) do update set last_seen_at=excluded.last_seen_at,connection_status='online'").run(roomId, user.uid, user.displayName, "member", stamp, stamp, "online"); io.to(`room:${roomId}`).emit("room:changed"); res.json(state(roomId)); });
 app.get("/api/rooms/:roomId", required, (req, res) => { const result = state(String(req.params.roomId)); return result ? res.json(result) : fail(res, 404, "Xona topilmadi."); });
 app.post("/api/images", required, upload.single("image"), (req, res) => req.file ? res.status(201).json({ imageId: req.file.filename, url: `/media/${req.file.filename}` }) : fail(res, 400, "image is required"));

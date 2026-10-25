@@ -29,7 +29,7 @@ export function LoginPage(): JSX.Element {
   return (
     <div className={styles.page}>
       <div className={`card ${styles.card}`}>
-        <span className={styles.telegramMark} aria-hidden="true">✈</span>
+        <img src="/logo.png" alt="PuzzleTogether" className={styles.loginLogo} />
         <h1>Hisobga kirish</h1>
         <p className={styles.subtitle}>
           Kirish va ro&apos;yxatdan o&apos;tish bir xil — faqat Telegram orqali.

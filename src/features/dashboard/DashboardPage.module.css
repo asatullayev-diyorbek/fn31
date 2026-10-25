@@ -1,106 +1,766 @@
 .page {
-  max-width: 860px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: var(--space-8) var(--space-5);
+  padding: 32px 32px 80px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: 36px;
+  position: relative;
+  z-index: 1;
 }
 
-.header {
+/* Ambient glows */
+.page::before {
+  content: "";
+  position: absolute;
+  top: -80px;
+  left: -100px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(0, 119, 255, 0.15) 0%, rgba(0, 119, 255, 0) 70%);
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(40px);
+}
+
+.page::after {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -80px;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(147, 51, 234, 0.12) 0%, rgba(147, 51, 234, 0) 70%);
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(40px);
+}
+
+/* 1. HERO & STATS ROW */
+.heroRow {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   flex-wrap: wrap;
-  gap: var(--space-4);
+  gap: 24px;
 }
 
-.header h1 {
-  font-size: 32px;
-  letter-spacing: -0.03em;
-  margin: 0;
-  font-weight: 700;
-}
-
-.actions {
+.welcomeBlock {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 6px;
+}
+
+.welcomeTitle {
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  margin: 0;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.welcomeSubtitle {
+  font-size: 15px;
+  color: #94a3b8;
+  margin: 0;
+  font-weight: 450;
+}
+
+.statsCard {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 16px 28px;
+  background: rgba(14, 22, 42, 0.72);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statIconWrap {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 12px #22c55e, 0 0 4px #22c55e;
+}
+
+.statText {
+  display: flex;
+  flex-direction: column;
+}
+
+.statValue {
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.statLabel {
+  font-size: 12.5px;
+  color: #8fa0b5;
+  margin-top: 2px;
+}
+
+/* 2. ACTION CARDS */
+.actionCards {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 24px;
+}
+
+/* Create Puzzle Card (Vibrant Blue) */
+.createCard {
+  background: linear-gradient(135deg, #0084ff 0%, #0066f5 48%, #004ecc 100%);
+  border-radius: 24px;
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 36px -8px rgba(0, 110, 255, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+  min-height: 136px;
+}
+
+.createCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 44px -8px rgba(0, 110, 255, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+}
+
+.createCardLeft {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 2;
+}
+
+.createIconBox {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.createTexts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.createTitle {
+  font-size: 21px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.createSubtitle {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0;
+  line-height: 1.4;
+  max-width: 320px;
+}
+
+/* Watermark Jigsaw Background Graphic */
+.watermarkGraphic {
+  position: absolute;
+  right: 80px;
+  top: 50%;
+  transform: translateY(-50%) rotate(8deg);
+  width: 160px;
+  height: 160px;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.createCardBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #0066ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  z-index: 2;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.createCard:hover .createCardBtn {
+  transform: scale(1.08) translateX(2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+/* Join Room Card (Dark Glass) */
+.joinCard {
+  background: rgba(14, 22, 42, 0.72);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  min-height: 136px;
+}
+
+.joinCardTop {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.joinIconBox {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.joinTexts {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.joinTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+
+.joinSubtitle {
+  font-size: 13px;
+  color: #8fa0b5;
+  margin: 0;
 }
 
 .joinForm {
   display: flex;
-  gap: var(--space-3);
+  gap: 10px;
   align-items: center;
 }
 
-.joinForm input {
+.joinInputWrap {
   flex: 1;
-  padding: 12px 18px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--liquid-glass-border);
-  color: var(--color-text);
-  font-size: 15px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(9, 14, 28, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 10px 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.joinForm input:focus {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: #2997ff;
-  outline: none;
-  box-shadow: 0 0 16px rgba(41, 151, 255, 0.35);
+.joinInputWrap:focus-within {
+  border-color: #0077ff;
+  box-shadow: 0 0 12px rgba(0, 119, 255, 0.35);
 }
 
-.joinForm input::placeholder {
-  color: var(--color-text-dim);
-}
-
-.error {
-  color: var(--color-danger);
+.joinHashIcon {
+  color: #64748b;
+  font-weight: 600;
   font-size: 14px;
-  margin: 0;
 }
 
-.empty {
-  color: var(--color-text-muted);
-  font-size: 15px;
-  text-align: center;
-  padding: var(--space-6) 0;
+.joinInput {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 14px;
+  width: 100%;
 }
 
-.roomList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.joinInput::placeholder {
+  color: #64748b;
+}
+
+.joinSubmitBtn {
+  background: #0077ff;
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 119, 255, 0.4);
+  transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.joinSubmitBtn:hover {
+  background: #1a88ff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 119, 255, 0.5);
+}
+
+.joinErrorText {
+  color: #f87171;
+  font-size: 12.5px;
+  margin: -8px 0 0;
+}
+
+/* 3. SECTIONS */
+.section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 18px;
 }
 
-.roomList li {
+.sectionHeader {
   display: flex;
   justify-content: space-between;
+  align-items: flex-end;
+}
+
+.sectionHeaderLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sectionTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.sectionSubtitle {
+  font-size: 13.5px;
+  color: #8fa0b5;
+  margin: 0;
+}
+
+.viewAllLink {
+  display: inline-flex;
   align-items: center;
-  padding: 14px 20px;
-  border-radius: var(--radius-lg);
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 9999px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--liquid-glass-border);
-  box-shadow: var(--liquid-glass-shine);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
   transition: all 0.2s ease;
 }
 
-.roomList li:hover {
+.viewAllLink:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.26);
-  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: translateX(1px);
 }
 
-.status {
-  font-size: 13px;
-  color: var(--color-text-dim);
-  font-weight: 500;
+/* 4. ROOMS 3-COLUMN GRID */
+.roomsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* OWNED ROOM CARD */
+.roomCard {
+  background: rgba(14, 22, 42, 0.72);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.roomCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 14px 32px -6px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+.roomCardTop {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* Thumbnail with Jigsaw Overlay */
+.thumbBox {
+  width: 90px;
+  height: 90px;
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.thumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.puzzleOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.roomInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.roomHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.roomCodeGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.roomCode {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.statusActive {
+  background: rgba(34, 197, 94, 0.14);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+.statusActiveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+.statusClosed {
+  background: rgba(148, 163, 184, 0.14);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.statusClosedDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.dotsBtn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.18s ease;
+}
+
+.dotsBtn:hover {
+  color: #ffffff;
+}
+
+/* 2x2 Meta Grid */
+.metaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 8px;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metaIcon {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+/* Room Action Row */
+.roomActionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.playActionBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.playActive {
+  background: linear-gradient(135deg, #0077ff, #0056d6);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 119, 255, 0.4);
+}
+
+.playActive:hover {
+  background: linear-gradient(135deg, #1a88ff, #0066ee);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 119, 255, 0.5);
+}
+
+.playClosed {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.playClosed:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.iconActionBtn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  position: relative;
+}
+
+.iconActionBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.tooltip {
+  position: absolute;
+  top: -28px;
+  background: #000;
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* 5. RECENT ROOMS 3-COLUMN GRID */
+.recentCard {
+  background: rgba(14, 22, 42, 0.72);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.recentCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 14px 32px -6px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+.recentThumbBox {
+  width: 68px;
+  height: 68px;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.recentCenter {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.recentCode {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recentMetaLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.rejoinBtn {
+  background: #0077ff;
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 119, 255, 0.4);
+  transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.rejoinBtn:hover {
+  background: #1a88ff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 119, 255, 0.5);
+}
+
+/* RESPONSIVENESS */
+@media (max-width: 1080px) {
+  .roomsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .actionCards {
+    grid-template-columns: 1fr;
+  }
+  .roomsGrid {
+    grid-template-columns: 1fr;
+  }
+  .heroRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .statsCard {
+    width: 100%;
+    justify-content: space-around;
+  }
 }
