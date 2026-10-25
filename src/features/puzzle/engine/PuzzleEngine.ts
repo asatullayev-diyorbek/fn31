@@ -242,10 +242,11 @@ export class PuzzleEngine {
   onPointerUp(pointerId: number): boolean {
     if (!this.drag || this.drag.pointerId !== pointerId) return false;
     const { groupId } = this.drag;
+    const draggedPieceIds = getGroupMembers(this.groups, groupId);
     this.drag = null;
     const didSnap = this.trySnapGroup(groupId);
     this.recomputeProgress();
-    this.commitGroup(groupId);
+    this.commitGroup(draggedPieceIds);
     return didSnap;
   }
 
@@ -260,7 +261,7 @@ export class PuzzleEngine {
     this.syncRenderer();
     this.trySnapGroup(this.selectedGroupId);
     this.recomputeProgress();
-    this.commitGroup(this.selectedGroupId);
+    this.commitGroup(members);
   }
 
   private groupCentroid(members: number[]): { x: number; y: number } {
@@ -331,7 +332,11 @@ export class PuzzleEngine {
           if (!current) continue;
           const dx = result.position.x - current.x;
           const dy = result.position.y - current.y;
-          this.positions = new Map(moveGroupBy(this.positions, this.groups, groupId, dx, dy));
+          // A prior merge this same call may have renamed (discarded) `groupId` —
+          // re-resolve this piece's current group id rather than using the
+          // outer-loop's now possibly-stale one.
+          const currentGroupId = getGroupId(this.groups, pieceId) ?? groupId;
+          this.positions = new Map(moveGroupBy(this.positions, this.groups, currentGroupId, dx, dy));
           this.groups = mergeGroups(this.groups, pieceId, neighborId);
           snappedAny = true;
         }
@@ -342,11 +347,28 @@ export class PuzzleEngine {
     return snappedAny;
   }
 
-  private commitGroup(groupId: string): void {
+  /**
+   * `pieceIds` is the set dragged/rotated *before* any snap in this gesture — a
+   * snap can call `mergeGroups`, which may rename (discard) a piece's group id,
+   * so looking the final group up by the *old* id here would silently find no
+   * members and skip persisting the move entirely (the piece then gets reverted
+   * by the next remote snapshot). Resolve each piece's *current* group id
+   * instead, and commit every member of every group touched — including a
+   * stationary neighbor group a snap just merged into, since its pieces' group
+   * id changed even though their position didn't.
+   */
+  private commitGroup(pieceIds: readonly number[]): void {
+    const finalGroupIds = new Set<string>();
+    for (const pieceId of pieceIds) {
+      const groupId = getGroupId(this.groups, pieceId);
+      if (groupId) finalGroupIds.add(groupId);
+    }
     const changed = new Map<number, PiecePosition>();
-    for (const pieceId of getGroupMembers(this.groups, groupId)) {
-      const position = this.positions.get(pieceId);
-      if (position) changed.set(pieceId, position);
+    for (const groupId of finalGroupIds) {
+      for (const pieceId of getGroupMembers(this.groups, groupId)) {
+        const position = this.positions.get(pieceId);
+        if (position) changed.set(pieceId, position);
+      }
     }
     this.events.onCommitPositions?.(changed);
   }
