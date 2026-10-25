@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useRoomSync } from "@/features/puzzle/synchronization/useRoomSync";
-import { completeRoom } from "@/features/rooms/roomsApi";
+import { completeRoom, deleteRoom } from "@/features/rooms/roomsApi";
 import { api, getSocket } from "@/lib/api";
 import { loadPuzzleImage } from "@/features/images/loadPuzzleImage";
 import { findGalleryImage } from "@/features/images/gallery";
@@ -64,9 +64,36 @@ export function PuzzleRoomPage(): JSX.Element {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const completionShownRef = useRef(false);
 
   const engineRef = useRef<PuzzleEngine | null>(null);
+
+  useEffect(() => {
+    const socket = getSocket();
+    const onRoomDeleted = () => {
+      alert("Bu xona egasi tomonidan o'chirildi.");
+      navigate("/dashboard");
+    };
+    socket.on("room:deleted", onRoomDeleted);
+    return () => {
+      socket.off("room:deleted", onRoomDeleted);
+    };
+  }, [navigate]);
+
+  async function handleDeleteRoom(): Promise<void> {
+    setIsDeleting(true);
+    try {
+      await deleteRoom(roomId);
+      navigate("/dashboard");
+    } catch (err) {
+      console.warn("Failed to delete room:", err);
+      navigate("/dashboard");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   const gameId = sync.game?.gameId;
   const imageId = sync.game?.imageId;
@@ -240,6 +267,7 @@ export function PuzzleRoomPage(): JSX.Element {
   const totalPieces = sync.game.pieceCount;
   const placedPieces = Math.min(totalPieces, Math.round(progress * totalPieces));
   const puzzleTitle = findGalleryImage(sync.game.imageId)?.label ?? "Tabiat manzarasi";
+  const isOwner = Boolean(user && sync.room && user.uid === sync.room.ownerUid);
 
   return (
     <div className={styles.page}>
@@ -442,6 +470,23 @@ export function PuzzleRoomPage(): JSX.Element {
             <span>Xona sozlamalari</span>
           </button>
 
+          {isOwner && (
+            <button
+              type="button"
+              className={`${styles.sidebarActionBtn} ${styles.leaveRoomBtn}`}
+              onClick={() => setShowDeleteModal(true)}
+              style={{ color: "#f87171", borderColor: "rgba(239, 68, 68, 0.25)" }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                <line x1="10" y1="11" x2="10" y2="17" />
+                <line x1="14" y1="11" x2="14" y2="17" />
+              </svg>
+              <span>Xonani o&apos;chirish</span>
+            </button>
+          )}
+
           <button
             type="button"
             className={`${styles.sidebarActionBtn} ${styles.leaveRoomBtn}`}
@@ -542,6 +587,53 @@ export function PuzzleRoomPage(): JSX.Element {
                 onClick={() => setShowSettingsModal(false)}
               >
                 Yopish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3.5. DELETE CONFIRMATION MODAL */}
+      {showDeleteModal && (
+        <div
+          className={styles.settingsOverlay}
+          role="dialog"
+          aria-modal="true"
+          onClick={() => !isDeleting && setShowDeleteModal(false)}
+        >
+          <div className={styles.settingsModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.settingsHeader}>
+              <h2 className={styles.settingsTitle} style={{ color: "#ef4444" }}>Xonani o&apos;chirish</h2>
+              <button
+                type="button"
+                className={styles.settingsCloseBtn}
+                onClick={() => setShowDeleteModal(false)}
+                aria-label="Yopish"
+              >
+                ✕
+              </button>
+            </div>
+            <p style={{ color: "#9ba8c0", fontSize: "14px", lineHeight: "1.5", margin: 0 }}>
+              Haqiqatan ham bu xonani butunlay o&apos;chirmoqchimisiz? Barcha ishtirokchilar uchun o&apos;yin to&apos;xtatiladi va xona ma&apos;lumotlari o&apos;chiriladi.
+            </p>
+            <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ flex: 1 }}
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+              >
+                Bekor qilish
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ flex: 1, background: "#ef4444", borderColor: "#ef4444" }}
+                onClick={handleDeleteRoom}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "O'chirilmoqda…" : "Ha, o'chirilsin"}
               </button>
             </div>
           </div>
