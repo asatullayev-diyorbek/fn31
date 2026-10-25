@@ -353,27 +353,26 @@ export class PuzzleEngine {
   }
 
   /**
-   * `pieceIds` is the set dragged/rotated *before* any snap in this gesture — a
-   * snap can call `mergeGroups`, which may rename (discard) a piece's group id,
-   * so looking the final group up by the *old* id here would silently find no
-   * members and skip persisting the move entirely (the piece then gets reverted
-   * by the next remote snapshot). Resolve each piece's *current* group id
-   * instead, and commit every member of every group touched — including a
-   * stationary neighbor group a snap just merged into, since its pieces' group
-   * id changed even though their position didn't.
+   * `pieceIds` is the set dragged/rotated in this gesture. Only *these*
+   * pieces' positions are sent — never other members of whatever group they
+   * end up merged into. Those stationary pieces didn't move, so this
+   * client's local `this.positions` for them is already stale-safe to leave
+   * untouched; broadcasting them anyway would mean re-sending this client's
+   * (possibly out-of-date) copy of data it never actually changed, which has
+   * previously overwritten another client's more current value for a piece
+   * this gesture didn't even touch.
+   *
+   * This relies on progress/completion being computed from *positions*, not
+   * from group-id labels (see computeFreeProgress) — a stationary piece's
+   * group id can lag behind the dragged piece's newly merged label without
+   * that ever being treated as "incorrect"; only actual position/adjacency
+   * is.
    */
   private commitGroup(pieceIds: readonly number[]): void {
-    const finalGroupIds = new Set<string>();
-    for (const pieceId of pieceIds) {
-      const groupId = getGroupId(this.groups, pieceId);
-      if (groupId) finalGroupIds.add(groupId);
-    }
     const changed = new Map<number, PiecePosition>();
-    for (const groupId of finalGroupIds) {
-      for (const pieceId of getGroupMembers(this.groups, groupId)) {
-        const position = this.positions.get(pieceId);
-        if (position) changed.set(pieceId, position);
-      }
+    for (const pieceId of pieceIds) {
+      const position = this.positions.get(pieceId);
+      if (position) changed.set(pieceId, position);
     }
     this.events.onCommitPositions?.(changed);
   }
@@ -381,16 +380,18 @@ export class PuzzleEngine {
   private recomputeProgress(): void {
     // Free mode pieces never need to reach their absolute classic-grid slot —
     // only to be joined to every image-adjacent neighbor — so it has its own
-    // group-connectivity-based progress measure.
+    // position-based progress measure (see computeFreeProgress for why it
+    // checks actual positions rather than group-id labels).
+    const snapConfig = {
+      pieceWidth: this.pieceWidthPx,
+      pieceHeight: this.pieceHeightPx,
+      toleranceRatio: this.config.snapToleranceRatio,
+      rotationEnabled: this.config.rotationEnabled,
+    };
     const progress =
       this.config.mode === "classic"
-        ? computeClassicProgress(this.positions, this.geometry.pieces, {
-            pieceWidth: this.pieceWidthPx,
-            pieceHeight: this.pieceHeightPx,
-            toleranceRatio: this.config.snapToleranceRatio,
-            rotationEnabled: this.config.rotationEnabled,
-          })
-        : computeFreeProgress(this.groups, this.geometry.pieces);
+        ? computeClassicProgress(this.positions, this.geometry.pieces, snapConfig)
+        : computeFreeProgress(this.positions, this.geometry.pieces, snapConfig);
     this.events.onProgressChange?.(progress);
     if (progress >= 1 && !this.complete) {
       this.complete = true;

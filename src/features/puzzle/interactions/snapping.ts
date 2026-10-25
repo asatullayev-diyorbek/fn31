@@ -1,6 +1,5 @@
 import type { EdgeSide, PieceGeometry } from "@/features/puzzle/geometry";
-import type { GroupMap, PiecePosition, PositionMap } from "./groupModel";
-import { areInSameGroup } from "./groupModel";
+import type { PiecePosition, PositionMap } from "./groupModel";
 
 export interface SnapConfig {
   pieceWidth: number;
@@ -113,20 +112,30 @@ export function computeClassicProgress(
  * at an arbitrary spot, not geometry's grid coordinates) — a piece is "done"
  * once it's joined to every one of its image-adjacent neighbors, regardless of
  * where on the canvas that joined cluster actually sits.
+ *
+ * Checked directly against *actual positions* (the same geometric test
+ * `checkFreeNeighborSnap` uses to decide whether to merge in the first
+ * place) rather than against `groupId` labels. `groupId` is client-asserted,
+ * shared-write state replicated across every participant's commits — any
+ * single bad write (a race, a since-fixed bug, a piece dragged after being
+ * merged) can leave a piece's label claiming membership its position no
+ * longer backs up, and a label-only check would then report it "done"
+ * forever with no way to self-correct. A position-based check always
+ * matches what the player can see on screen.
  */
 export function computeFreeProgress(
-  groups: GroupMap,
+  positions: PositionMap,
   geometries: readonly PieceGeometry[],
+  config: SnapConfig,
 ): number {
   if (geometries.length === 0) return 0;
   let correct = 0;
   for (const geometry of geometries) {
-    const neighborIds = Object.values(geometry.neighbors).filter(
-      (id): id is number => id !== undefined,
-    );
-    const allJoined = neighborIds.every((neighborId) =>
-      areInSameGroup(groups, geometry.pieceId, neighborId),
-    );
+    const neighborEntries = Object.entries(geometry.neighbors) as Array<[EdgeSide, number | undefined]>;
+    const allJoined = neighborEntries.every(([side, neighborId]) => {
+      if (neighborId === undefined) return true;
+      return checkFreeNeighborSnap(geometry.pieceId, side, neighborId, positions, config).snapped;
+    });
     if (allJoined) correct++;
   }
   return correct / geometries.length;

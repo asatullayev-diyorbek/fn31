@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkClassicSnap, checkFreeNeighborSnap, computeClassicProgress } from "./snapping";
+import { checkClassicSnap, checkFreeNeighborSnap, computeClassicProgress, computeFreeProgress } from "./snapping";
 import type { SnapConfig } from "./snapping";
 import type { PositionMap } from "./groupModel";
 import { generatePuzzleGeometry } from "@/features/puzzle/geometry";
@@ -81,5 +81,48 @@ describe("computeClassicProgress", () => {
       ]),
     );
     expect(computeClassicProgress(solved, geometry.pieces, config)).toBe(1);
+  });
+});
+
+describe("computeFreeProgress", () => {
+  const geometry = generatePuzzleGeometry({
+    seed: "free-progress-test",
+    geometryVersion: 1,
+    pieceCount: 9,
+    imageAspectRatio: 1,
+  });
+  // Any mutually-consistent relative layout counts as "solved" in Free mode — reusing
+  // the classic grid coordinates is just a convenient one, not a requirement.
+  const solved: PositionMap = new Map(
+    geometry.pieces.map((p) => [p.pieceId, { x: p.col * config.pieceWidth, y: p.row * config.pieceHeight, rotation: 0 as const }]),
+  );
+
+  it("is 1 when every piece is correctly joined to its neighbors", () => {
+    expect(computeFreeProgress(solved, geometry.pieces, config)).toBe(1);
+  });
+
+  it("is 0 when every piece is scattered far apart", () => {
+    const scattered: PositionMap = new Map(
+      geometry.pieces.map((p, i) => [p.pieceId, { x: i * 9999, y: i * 9999, rotation: 0 as const }]),
+    );
+    expect(computeFreeProgress(scattered, geometry.pieces, config)).toBe(0);
+  });
+
+  it("regression: a piece whose position is wrong is never reported as done, regardless of any group-id label", () => {
+    // This is the exact bug reported in production: every piece shared one group id
+    // (so a label-based check said 100%), but one piece's actual position didn't
+    // match where its neighbors say it should be.
+    const brokenPieceId = geometry.pieces[4]!.pieceId; // center piece of a 3x3 grid — has 4 neighbors
+    const mutableSolved = new Map(solved);
+    mutableSolved.set(brokenPieceId, { x: 99999, y: 99999, rotation: 0 });
+    const positionsWithOneWrong: PositionMap = mutableSolved;
+
+    expect(computeFreeProgress(positionsWithOneWrong, geometry.pieces, config)).toBeLessThan(1);
+
+    // Neither the displaced piece nor any of its would-be neighbors should count as "done".
+    const brokenGeometry = geometry.pieces.find((p) => p.pieceId === brokenPieceId)!;
+    const affectedCount = 1 + Object.values(brokenGeometry.neighbors).filter((id) => id !== undefined).length;
+    const correctCount = Math.round(computeFreeProgress(positionsWithOneWrong, geometry.pieces, config) * geometry.pieces.length);
+    expect(correctCount).toBe(geometry.pieces.length - affectedCount);
   });
 });
