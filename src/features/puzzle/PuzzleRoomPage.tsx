@@ -2,14 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { useRoomSync } from "@/features/puzzle/synchronization/useRoomSync";
-import { acquirePieceLock, commitPiecePositions } from "@/features/puzzle/synchronization/pieceChunkSync";
-import {
-  clearLiveDragPosition,
-  createThrottledPublisher,
-  registerLiveDragDisconnectCleanup,
-} from "@/features/puzzle/synchronization/liveDrag";
-import { getFirebaseDatabase, getFirebaseFirestore } from "@/lib/firebase/client";
-import { PIECE_LOCK_LEASE_MS } from "@/app/config";
+import { api, getSocket } from "@/lib/api";
 import { loadPuzzleImage } from "@/features/images/loadPuzzleImage";
 import { generatePuzzleGeometry, type GeometryResult } from "@/features/puzzle/geometry";
 import { PuzzleBoard } from "./PuzzleBoard";
@@ -28,7 +21,6 @@ export function PuzzleRoomPage(): JSX.Element {
   const [progress, setProgress] = useState(0);
 
   const engineRef = useRef<PuzzleEngine | null>(null);
-  const throttledPublishers = useRef<Map<number, (x: number, y: number, rotation: number) => void>>(new Map());
 
   useEffect(() => {
     if (!sync.game) return;
@@ -71,44 +63,16 @@ export function PuzzleRoomPage(): JSX.Element {
   }, [sync.pieces, sync.myUid]);
 
   async function handleDragStart(pieceIds: readonly number[]): Promise<void> {
-    if (!user || !sync.game) return;
-    const db = getFirebaseFirestore();
-    const rtdb = getFirebaseDatabase();
-    for (const pieceId of pieceIds) {
-      void acquirePieceLock(db, roomId, sync.game.gameId, pieceId, user.uid, PIECE_LOCK_LEASE_MS);
-      void registerLiveDragDisconnectCleanup(rtdb, sync.game.gameId, pieceId);
-      if (!throttledPublishers.current.has(pieceId)) {
-        throttledPublishers.current.set(pieceId, createThrottledPublisher(rtdb, sync.game.gameId, pieceId, user.uid));
-      }
-    }
+    void pieceIds;
   }
 
   function handleDragMove(pieceIds: readonly number[], positions: ReadonlyMap<number, PiecePosition>): void {
-    for (const pieceId of pieceIds) {
-      const position = positions.get(pieceId);
-      const publish = throttledPublishers.current.get(pieceId);
-      if (position && publish) publish(position.x, position.y, position.rotation);
-    }
+    for (const pieceId of pieceIds) { const position = positions.get(pieceId); if (position) getSocket().emit("piece:move", { roomId, pieceId, ...position }); }
   }
 
   async function handleCommitPositions(changed: ReadonlyMap<number, PiecePosition>): Promise<void> {
     if (!user || !sync.game) return;
-    const db = getFirebaseFirestore();
-    const rtdb = getFirebaseDatabase();
-    const updates = new Map(
-      Array.from(changed.entries()).map(([pieceId, position]) => {
-        const existing = sync.pieces.get(pieceId);
-        return [
-          pieceId,
-          { x: position.x, y: position.y, rotation: position.rotation, groupId: existing?.groupId ?? `g${pieceId}` },
-        ] as const;
-      }),
-    );
-    await commitPiecePositions(db, roomId, sync.game.gameId, user.uid, updates);
-    for (const pieceId of changed.keys()) {
-      await clearLiveDragPosition(rtdb, sync.game.gameId, pieceId);
-      throttledPublishers.current.delete(pieceId);
-    }
+    await api(`/api/rooms/${encodeURIComponent(roomId)}/pieces`, { method: "POST", body: JSON.stringify({ gameId: sync.game.gameId, pieces: Array.from(changed.entries()).map(([pieceId, position]) => ({ pieceId, ...position, groupId: sync.pieces.get(pieceId)?.groupId ?? `g${pieceId}` })) }) });
   }
 
   function copyInviteLink(): void {

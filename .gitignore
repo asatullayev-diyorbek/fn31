@@ -17,6 +17,8 @@ pubsub-debug.log
 *.tsbuildinfo
 functions/lib
 functions/node_modules
+backend/data/
 .vscode/*
 !.vscode/extensions.json
 .DS_Store
+.vercel

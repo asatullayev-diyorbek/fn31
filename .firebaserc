@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "demo-puzzletogether"
-  }
+    "default": "puzzletogether-20261021"
+  },
+  "targets": {},
+  "etags": {}
 }

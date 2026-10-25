@@ -5,7 +5,7 @@ import { useTelegramLogin } from "./useTelegramLogin";
 import styles from "./LoginPage.module.css";
 
 export function LoginPage(): JSX.Element {
-  const { user, firebaseConfigured, loading } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   const { state, start, reset } = useTelegramLogin();
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
@@ -26,23 +26,10 @@ export function LoginPage(): JSX.Element {
     return <Navigate to={redirectTo} replace />;
   }
 
-  if (!firebaseConfigured) {
-    return (
-      <div className={styles.page}>
-        <div className="card">
-          <h1>Kirish hozircha mavjud emas</h1>
-          <p>
-            Bu muhitda haqiqiy Firebase loyihasi sozlanmagan. Qarang:{" "}
-            <code>docs/deployment.md</code>.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.page}>
       <div className={`card ${styles.card}`}>
+        <span className={styles.telegramMark} aria-hidden="true">✈</span>
         <h1>Hisobga kirish</h1>
         <p className={styles.subtitle}>
           Kirish va ro&apos;yxatdan o&apos;tish bir xil — faqat Telegram orqali.
@@ -51,7 +38,7 @@ export function LoginPage(): JSX.Element {
         {state.step === "idle" || state.step === "error" ? (
           <>
             <button type="button" className="btn btn-primary" onClick={start}>
-              Telegram orqali kirish
+              <span aria-hidden="true">✈</span> Telegram orqali kirish
             </button>
             {state.step === "error" && (
               <p role="alert" className={styles.error}>

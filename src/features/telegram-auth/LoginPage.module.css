@@ -1,7 +1,7 @@
 .page {
   max-width: 480px;
   margin: 0 auto;
-  padding: var(--space-8) var(--space-4);
+  padding: 72px var(--space-4);
 }
 
 .card {
@@ -9,7 +9,11 @@
   flex-direction: column;
   gap: var(--space-4);
   text-align: center;
+  padding: 40px 30px;
 }
+
+.telegramMark { display: grid; place-items: center; width: 62px; height: 62px; margin: 0 auto 4px; border-radius: 22px; background: linear-gradient(135deg, #49c0ff, #1678e8); box-shadow: 0 14px 32px rgba(16, 133, 245, 0.33); font-size: 28px; }
+.card h1 { margin: 2px 0 0; letter-spacing: -0.04em; }
 
 .subtitle {
   color: var(--color-text-muted);

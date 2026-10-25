@@ -3,8 +3,9 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(5, 7, 13, 0.7);
+  backdrop-filter: blur(20px) saturate(140%);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -23,14 +24,17 @@
 .logo {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
-  background: var(--color-accent);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #78d3ff, #1877f2 65%, #10152a);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 16px;
+  box-shadow: 0 8px 18px rgba(39, 147, 255, 0.35);
 }
+
+.brandAccent { color: #55baff; }
 
 .nav {
   display: flex;
@@ -47,14 +51,14 @@
 }
 
 .navLinks a {
-  color: var(--color-text-muted);
+  color: #c6d2e5;
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
 }
 
 .navLinks a:hover {
-  color: var(--color-text);
+  color: #70c4ff;
 }
 
 @media (max-width: 720px) {

@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { signOut } from "firebase/auth";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { getFirebaseAuth } from "@/lib/firebase/client";
 import { getRecentRoomIds, joinRoom, listMyOwnedRooms } from "@/features/rooms/roomsApi";
 import type { Room } from "@/types/firestore";
 import styles from "./DashboardPage.module.css";
 
 export function DashboardPage(): JSX.Element {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [ownedRooms, setOwnedRooms] = useState<Room[]>([]);
   const [recentRoomIds] = useState<string[]>(() => getRecentRoomIds());
@@ -18,7 +16,7 @@ export function DashboardPage(): JSX.Element {
 
   useEffect(() => {
     if (!user) return;
-    listMyOwnedRooms(user.uid)
+    listMyOwnedRooms()
       .then(setOwnedRooms)
       .finally(() => setLoadingRooms(false));
   }, [user]);
@@ -28,7 +26,7 @@ export function DashboardPage(): JSX.Element {
     if (!user || !joinCode.trim()) return;
     setJoinError(null);
     try {
-      await joinRoom(joinCode.trim(), user.uid, user.displayName ?? "O'yinchi");
+      await joinRoom(joinCode.trim());
       navigate(`/room/${joinCode.trim()}`);
     } catch (error) {
       setJoinError(error instanceof Error ? error.message : "Xonaga qo'shilib bo'lmadi.");
@@ -36,7 +34,7 @@ export function DashboardPage(): JSX.Element {
   }
 
   async function handleLogout(): Promise<void> {
-    await signOut(getFirebaseAuth());
+    logout();
     navigate("/");
   }
 

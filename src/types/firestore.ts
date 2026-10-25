@@ -1,4 +1,4 @@
-import type { Timestamp } from "firebase/firestore";
+type Timestamp = string;
 
 /** users/{uid} */
 export interface UserProfile {

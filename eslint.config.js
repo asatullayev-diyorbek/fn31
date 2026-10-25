@@ -6,7 +6,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 
 export default [
-  { ignores: ["dist", "functions/**", "node_modules", "e2e-report"] },
+  { ignores: ["dist", "functions/**", "node_modules", "e2e-report", "backend/**"] },
   js.configs.recommended,
   {
     files: ["**/*.{ts,tsx}"],

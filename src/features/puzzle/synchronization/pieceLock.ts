@@ -1,12 +1,13 @@
 export interface LockableEntity {
   lockedBy: string | null;
-  lockExpiresAt: { toMillis: () => number } | null;
+  lockExpiresAt: { toMillis: () => number } | string | null;
 }
 
 /** True if the entity is currently held by someone whose lease hasn't expired yet. */
 export function isLockHeld(entity: LockableEntity, nowMs: number): boolean {
   if (!entity.lockedBy || !entity.lockExpiresAt) return false;
-  return entity.lockExpiresAt.toMillis() > nowMs;
+  const expiry = typeof entity.lockExpiresAt === "string" ? Date.parse(entity.lockExpiresAt) : entity.lockExpiresAt.toMillis();
+  return expiry > nowMs;
 }
 
 /** A dropped client (lease expired) never blocks a piece forever — anyone, including its original holder, can acquire it again once expired. */
