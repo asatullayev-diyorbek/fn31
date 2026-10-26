@@ -5,6 +5,7 @@ export {
   getGroupMembers,
   mergeGroups,
   moveGroupBy,
+  moveGroupSubsetBy,
   rotateGroupAround,
 } from "./groupModel";
 export type { GroupMap, PiecePosition, PositionMap } from "./groupModel";

@@ -12,6 +12,7 @@ import {
   getGroupMembers,
   mergeGroups,
   moveGroupBy,
+  moveGroupSubsetBy,
   rotateGroupAround,
 } from "@/features/puzzle/interactions";
 import type { GroupMap, PiecePosition, PositionMap } from "@/features/puzzle/interactions";
@@ -263,7 +264,7 @@ export class PuzzleEngine {
     const { groupId } = this.drag;
     const draggedPieceIds = getGroupMembers(this.groups, groupId);
     this.drag = null;
-    const didSnap = this.trySnapGroup(groupId);
+    const didSnap = this.trySnapGroup(groupId, draggedPieceIds);
     this.recomputeProgress();
     this.commitGroup(draggedPieceIds);
     return didSnap;
@@ -278,7 +279,7 @@ export class PuzzleEngine {
       rotateGroupAround(this.positions, this.groups, this.selectedGroupId, delta, centroid.x, centroid.y),
     );
     this.syncRenderer();
-    this.trySnapGroup(this.selectedGroupId);
+    this.trySnapGroup(this.selectedGroupId, members);
     this.recomputeProgress();
     this.commitGroup(members);
   }
@@ -304,9 +305,10 @@ export class PuzzleEngine {
     }
   }
 
-  private trySnapGroup(groupId: string): boolean {
+  private trySnapGroup(groupId: string, draggedPieceIds: readonly number[]): boolean {
     if (!this.config.snapEnabled) return false;
     let snappedAny = false;
+    const allowedToMove = new Set(draggedPieceIds);
 
     if (this.config.mode === "classic") {
       for (const pieceId of getGroupMembers(this.groups, groupId)) {
@@ -355,7 +357,13 @@ export class PuzzleEngine {
           // re-resolve this piece's current group id rather than using the
           // outer-loop's now possibly-stale one.
           const currentGroupId = getGroupId(this.groups, pieceId) ?? groupId;
-          this.positions = new Map(moveGroupBy(this.positions, this.groups, currentGroupId, dx, dy));
+          // Restricted to `draggedPieceIds`: if an earlier merge in this same call
+          // already pulled a previously-placed, stationary neighbor into this
+          // group, `currentGroupId`'s members now include that neighbor's whole
+          // cluster too — but only the originally-dragged pieces may actually
+          // move (see moveGroupSubsetBy's docstring for why moving the rest would
+          // silently revert on the next sync).
+          this.positions = new Map(moveGroupSubsetBy(this.positions, this.groups, currentGroupId, allowedToMove, dx, dy));
           this.groups = mergeGroups(this.groups, pieceId, neighborId);
           snappedAny = true;
         }

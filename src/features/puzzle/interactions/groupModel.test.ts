@@ -5,6 +5,7 @@ import {
   getGroupMembers,
   mergeGroups,
   moveGroupBy,
+  moveGroupSubsetBy,
   rotateGroupAround,
 } from "./groupModel";
 import type { PositionMap } from "./groupModel";
@@ -57,6 +58,25 @@ describe("groupModel", () => {
     ]);
     const moved = moveGroupBy(positions, groups, groups.get(0)!, 50, 50);
     expect(moved.get(1)).toEqual({ x: 0, y: 0, rotation: 0 });
+  });
+
+  it("moveGroupSubsetBy only moves members that are also in the allowed set", () => {
+    // Regression: a drag gesture that bridges two previously-separate, already-placed
+    // clusters in one gesture must never drag the non-dragged cluster along with it —
+    // only the pieces the user actually grabbed (`allowedPieceIds`) may move.
+    const groups = mergeGroups(createInitialGroups([0, 1, 2]), 0, 1); // 0,1 merged; 2 joins below
+    const merged = mergeGroups(groups, 1, 2); // simulate the engine's post-merge superset
+    const positions: PositionMap = new Map([
+      [0, { x: 0, y: 0, rotation: 0 }],
+      [1, { x: 100, y: 0, rotation: 0 }],
+      [2, { x: 200, y: 0, rotation: 0 }], // the stationary, already-placed piece
+    ]);
+    const groupId = merged.get(0)!;
+    const moved = moveGroupSubsetBy(positions, merged, groupId, new Set([0, 1]), 20, 5);
+
+    expect(moved.get(0)).toEqual({ x: 20, y: 5, rotation: 0 });
+    expect(moved.get(1)).toEqual({ x: 120, y: 5, rotation: 0 });
+    expect(moved.get(2)).toEqual({ x: 200, y: 0, rotation: 0 }); // untouched
   });
 
   it("rotating a group around its centroid rotates each member's own rotation and position", () => {

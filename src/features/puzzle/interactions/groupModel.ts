@@ -62,6 +62,36 @@ export function moveGroupBy(
   return next;
 }
 
+/**
+ * Like `moveGroupBy`, but only moves members of `groupId` that are also in
+ * `allowedPieceIds`. Needed when a single drag gesture snaps onto more than
+ * one already-placed neighbor at once: resolving the dragged piece's group
+ * id *after* the first merge returns a superset that now also contains that
+ * first neighbor's whole (stationary, already-committed) group, and moving
+ * the superset to satisfy the second snap would drag that previously-placed
+ * cluster along with it — a local-only move, since only the pieces the user
+ * actually dragged ever get committed/broadcast (see PuzzleEngine.commitGroup),
+ * so the stationary cluster's shift silently reverts on the next sync. This
+ * restricts the move to the pieces that are actually allowed to move.
+ */
+export function moveGroupSubsetBy(
+  positions: PositionMap,
+  groups: GroupMap,
+  groupId: string,
+  allowedPieceIds: ReadonlySet<number>,
+  dx: number,
+  dy: number,
+): PositionMap {
+  const next = new Map(positions);
+  for (const pieceId of getGroupMembers(groups, groupId)) {
+    if (!allowedPieceIds.has(pieceId)) continue;
+    const current = positions.get(pieceId);
+    if (!current) continue;
+    next.set(pieceId, { ...current, x: current.x + dx, y: current.y + dy });
+  }
+  return next;
+}
+
 function normalizeRotation(degrees: number): RotationDegrees {
   const normalized = (((degrees % 360) + 360) % 360) as number;
   if (normalized === 0 || normalized === 90 || normalized === 180 || normalized === 270) {
