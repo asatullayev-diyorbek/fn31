@@ -59,6 +59,29 @@ describe("checkFreeNeighborSnap", () => {
     const result = checkFreeNeighborSnap(2, "left", 1, positions, config);
     expect(result.snapped).toBe(false);
   });
+
+  it("regression: joining two pieces rotated 90° together expects the offset rotated too, not the unrotated grid offset", () => {
+    // Production bug: pieces rendered rotated in place around their own center
+    // (see PuzzleCanvasRenderer), so a pair sharing a 90° rotation must be offset
+    // along the *rotated* axis to actually sit edge-to-edge — piece 2 is "left"
+    // of piece 1, which at 0° would mean piece 2 sits pieceWidth to piece 1's
+    // right (dx:+1,dy:0 in the unrotated frame); rotated 90° that direction
+    // becomes "below" (dx:0,dy:+1), not the unrotated screen-right position.
+    const positions: PositionMap = new Map([
+      [1, { x: 500, y: 300, rotation: 90 }],
+      [2, { x: 500, y: 400, rotation: 90 }], // correctly rotated-offset slot: directly below piece 1
+    ]);
+    const result = checkFreeNeighborSnap(2, "left", 1, positions, config);
+    expect(result.snapped).toBe(true);
+    expect(result.position).toEqual({ x: 500, y: 400, rotation: 90 });
+
+    // The pre-fix unrotated slot (pieceWidth to the right) must NOT be accepted.
+    const unrotatedSlot: PositionMap = new Map([
+      [1, { x: 500, y: 300, rotation: 90 }],
+      [2, { x: 600, y: 300, rotation: 90 }],
+    ]);
+    expect(checkFreeNeighborSnap(2, "left", 1, unrotatedSlot, config).snapped).toBe(false);
+  });
 });
 
 describe("computeClassicProgress", () => {

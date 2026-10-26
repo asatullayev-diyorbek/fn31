@@ -44,7 +44,9 @@ export function checkClassicSnap(
  * `side` is the side of `movedPiece` on which `neighborPiece` sits (i.e.
  * `geometry.neighbors[side] === neighborPieceId` for movedPiece's own
  * geometry) — so the offset below expresses movedPiece's expected
- * position *relative to* neighborPiece.
+ * position *relative to* neighborPiece, in the pieces' own (unrotated)
+ * reference frame. `rotatePixelOffset` below turns this into the actual
+ * on-screen offset once the pair's shared rotation is taken into account.
  */
 const EDGE_OFFSETS: Record<EdgeSide, { dx: number; dy: number }> = {
   top: { dx: 0, dy: 1 }, // neighbor is above -> moved piece sits one piece-height below it
@@ -52,6 +54,24 @@ const EDGE_OFFSETS: Record<EdgeSide, { dx: number; dy: number }> = {
   bottom: { dx: 0, dy: -1 }, // neighbor is below -> moved piece sits one piece-height above it
   left: { dx: 1, dy: 0 }, // neighbor is to the left -> moved piece sits one piece-width to its right
 };
+
+/**
+ * The renderer rotates each piece's artwork in place around its own center
+ * (see PuzzleCanvasRenderer) rather than moving it — so a pair of pieces
+ * rotated together by the same angle only looks correctly joined if the
+ * *pixel offset* between their centers is rotated by that same angle too.
+ * Without this, two same-rotation pieces could pass the snap check (their
+ * rotations match) while landing a `pieceWidth`/`pieceHeight`-sized gap
+ * away from where their rotated artwork actually needs to sit — the
+ * "joined but visibly misaligned" bug. Rotation is always a multiple of
+ * 90°, so cos/sin round cleanly to -1/0/1 with no floating-point drift.
+ */
+function rotatePixelOffset(pixelDx: number, pixelDy: number, rotationDegrees: number): { dx: number; dy: number } {
+  const radians = (rotationDegrees * Math.PI) / 180;
+  const cos = Math.round(Math.cos(radians));
+  const sin = Math.round(Math.sin(radians));
+  return { dx: pixelDx * cos - pixelDy * sin, dy: pixelDx * sin + pixelDy * cos };
+}
 
 /**
  * Free mode: should `movedPiece` snap onto `neighborPiece` across `side`?
@@ -75,9 +95,10 @@ export function checkFreeNeighborSnap(
     return { snapped: false };
   }
 
-  const offset = EDGE_OFFSETS[side];
-  const expectedX = neighbor.x + offset.dx * config.pieceWidth;
-  const expectedY = neighbor.y + offset.dy * config.pieceHeight;
+  const rawOffset = EDGE_OFFSETS[side];
+  const offset = rotatePixelOffset(rawOffset.dx * config.pieceWidth, rawOffset.dy * config.pieceHeight, neighbor.rotation);
+  const expectedX = neighbor.x + offset.dx;
+  const expectedY = neighbor.y + offset.dy;
   const toleranceX = config.pieceWidth * config.toleranceRatio;
   const toleranceY = config.pieceHeight * config.toleranceRatio;
 
